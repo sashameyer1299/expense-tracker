@@ -1,13 +1,23 @@
 // Health tab — manual quit-smoking log (localStorage) + actual Health/Quit-Smoking spend (IndexedDB, shared with the tracker).
 
 const DB_NAME = 'expenseTrackerDB';
-const DB_VERSION = 1;
-const STORE = 'expenses';
+const DB_VERSION = 2;
 const HEALTH_GROUP = '2';
 
 function openDB() {
   return new Promise((resolve, reject) => {
     const req = indexedDB.open(DB_NAME, DB_VERSION);
+    req.onupgradeneeded = () => {
+      const db = req.result;
+      if (!db.objectStoreNames.contains('expenses')) {
+        const store = db.createObjectStore('expenses', { keyPath: 'id', autoIncrement: true });
+        store.createIndex('date', 'date');
+      }
+      if (!db.objectStoreNames.contains('income')) {
+        const store = db.createObjectStore('income', { keyPath: 'id', autoIncrement: true });
+        store.createIndex('date', 'date');
+      }
+    };
     req.onsuccess = () => resolve(req.result);
     req.onerror = () => reject(req.error);
   });
@@ -16,8 +26,8 @@ function openDB() {
 async function getAllExpenses() {
   const db = await openDB();
   return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE, 'readonly');
-    const req = tx.objectStore(STORE).getAll();
+    const tx = db.transaction('expenses', 'readonly');
+    const req = tx.objectStore('expenses').getAll();
     req.onsuccess = () => resolve(req.result);
     req.onerror = () => reject(req.error);
   });

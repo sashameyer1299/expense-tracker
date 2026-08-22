@@ -6,13 +6,26 @@ is no server component at all — plain HTML/CSS/JS is the smallest thing that w
 
 ## Architecture
 
-- `index.html` / `style.css` / `app.js` — the whole app. One file per responsibility, no
-  framework, no bundler.
-- Data lives in the browser: **IndexedDB** for expense records, **localStorage** for the
-  editable category list. Nothing is sent over the network at runtime — keep it that way.
-- `sw.js` is a plain cache-first service worker for the app shell. Bump `CACHE_NAME` when
-  changing any cached file so clients pick up the update.
-- `manifest.json` makes it installable to a phone home screen.
+Four pages, each a self-contained HTML+JS pair, no shared modules (no build step, so small
+duplication across files — e.g. `openDB()` — is intentional, not an oversight):
+
+- **Expenses** (`index.html`/`app.js`) — the expense log, including the "unexpected" flag.
+- **Budget** (`budget.html`/`budget.js`) — editable per-category targets + actual income read.
+- **Health** (`health.html`/`health.js`) — quit-smoking log + actual health-category spend.
+- **Income** (`income.html`/`income.js`) — the income log.
+
+Data lives in the browser only, nothing sent over the network at runtime — keep it that way:
+- **IndexedDB** (`expenseTrackerDB`, currently version 2) with two object stores: `expenses` and
+  `income`. Every page that opens the DB runs the same `onupgradeneeded` block that creates both
+  stores if missing, because a visitor can land on any page first — don't let one page assume
+  another has already initialized the schema. Bump `DB_VERSION` (in all four files that open the
+  DB) if the schema changes again.
+- **localStorage** for the editable category list, budget targets, net income figure, and the
+  quit-smoking daily log.
+
+`sw.js` is a plain cache-first service worker for the app shell — bump `CACHE_NAME` and add any
+new file to `APP_SHELL` when changing what's cached, so installed clients pick up the update.
+`manifest.json` makes it installable to a phone home screen.
 
 ## Hard constraints — do not violate
 

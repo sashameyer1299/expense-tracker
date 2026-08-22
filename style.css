@@ -45,6 +45,24 @@ h2 { font-size: 1rem; color: var(--text-dim); margin: 1.5rem 0 0.5rem; }
   color: var(--text-dim);
 }
 
+.unexpectedSummary {
+  font-size: 0.8rem;
+  color: var(--danger);
+  padding-bottom: 0.5rem;
+}
+
+.badge {
+  display: inline-block;
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--danger);
+  border: 1px solid var(--danger);
+  border-radius: 4px;
+  padding: 0.05rem 0.35rem;
+  vertical-align: middle;
+  margin-left: 0.3rem;
+}
+
 .pageNav {
   display: flex;
   gap: 1rem;
@@ -161,6 +179,8 @@ form {
 .field { margin-bottom: 0.75rem; display: flex; flex-direction: column; gap: 0.3rem; }
 .field.inline { flex-direction: row; align-items: center; }
 .field.inline input { flex: 1; }
+.field.checkboxField label { display: flex; align-items: center; gap: 0.5rem; color: var(--text); font-size: 0.9rem; }
+.field.checkboxField input { width: auto; min-height: auto; }
 
 label { font-size: 0.8rem; color: var(--text-dim); }
 

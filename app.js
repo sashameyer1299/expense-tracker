@@ -1,7 +1,7 @@
 // Expense Tracker — vanilla JS, IndexedDB storage, no backend, no network calls.
 
 const DB_NAME = 'expenseTrackerDB';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const STORE = 'expenses';
 
 const DEFAULT_CATEGORIES = [
@@ -25,8 +25,12 @@ function openDB() {
     const req = indexedDB.open(DB_NAME, DB_VERSION);
     req.onupgradeneeded = () => {
       const db = req.result;
-      if (!db.objectStoreNames.contains(STORE)) {
-        const store = db.createObjectStore(STORE, { keyPath: 'id', autoIncrement: true });
+      if (!db.objectStoreNames.contains('expenses')) {
+        const store = db.createObjectStore('expenses', { keyPath: 'id', autoIncrement: true });
+        store.createIndex('date', 'date');
+      }
+      if (!db.objectStoreNames.contains('income')) {
+        const store = db.createObjectStore('income', { keyPath: 'id', autoIncrement: true });
         store.createIndex('date', 'date');
       }
     };
@@ -125,6 +129,7 @@ const dateInput = document.getElementById('date');
 const amountInput = document.getElementById('amount');
 const categorySelect = document.getElementById('category');
 const noteInput = document.getElementById('note');
+const unexpectedInput = document.getElementById('unexpected');
 const submitBtn = document.getElementById('submitBtn');
 const cancelEditBtn = document.getElementById('cancelEditBtn');
 
@@ -133,6 +138,7 @@ const newCategoryInput = document.getElementById('newCategory');
 const addCategoryBtn = document.getElementById('addCategoryBtn');
 
 const monthSummaryEl = document.getElementById('monthSummary');
+const unexpectedSummaryEl = document.getElementById('unexpectedSummary');
 const categorySummaryEl = document.getElementById('categorySummary');
 const expenseGroupsEl = document.getElementById('expenseGroups');
 
@@ -167,8 +173,20 @@ async function renderAll() {
   expenses.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : b.id - a.id));
 
   renderMonthSummary(expenses);
+  renderUnexpectedSummary(expenses);
   renderCategorySummary(expenses);
   renderHistory(expenses);
+}
+
+function renderUnexpectedSummary(expenses) {
+  const key = monthKey(todayStr());
+  const unexpected = expenses.filter((e) => monthKey(e.date) === key && e.unexpected);
+  if (!unexpected.length) {
+    unexpectedSummaryEl.textContent = '';
+    return;
+  }
+  const total = unexpected.reduce((sum, e) => sum + e.amount, 0);
+  unexpectedSummaryEl.textContent = `${money(total)} unexpected this month (${unexpected.length} ${unexpected.length === 1 ? 'entry' : 'entries'})`;
 }
 
 function renderMonthSummary(expenses) {
@@ -217,7 +235,7 @@ function renderHistory(expenses) {
           (e) => `
         <div class="expenseRow" data-id="${e.id}">
           <div class="meta">
-            <div class="category">${escapeHtml(e.category)}</div>
+            <div class="category">${escapeHtml(e.category)}${e.unexpected ? ' <span class="badge">Unexpected</span>' : ''}</div>
             ${e.note ? `<div class="note">${escapeHtml(e.note)}</div>` : ''}
             <div class="date">${e.date}</div>
           </div>
@@ -240,6 +258,7 @@ function resetForm() {
   form.reset();
   editIdInput.value = '';
   dateInput.value = todayStr();
+  unexpectedInput.checked = false;
   submitBtn.textContent = 'Add expense';
   cancelEditBtn.hidden = true;
 }
@@ -251,6 +270,7 @@ form.addEventListener('submit', async (ev) => {
     amount: parseFloat(amountInput.value),
     category: categorySelect.value,
     note: noteInput.value.trim(),
+    unexpected: unexpectedInput.checked,
   };
   if (!expense.date || isNaN(expense.amount) || expense.amount < 0 || !expense.category) return;
 
@@ -280,6 +300,7 @@ expenseGroupsEl.addEventListener('click', async (ev) => {
     amountInput.value = expense.amount;
     categorySelect.value = expense.category;
     noteInput.value = expense.note || '';
+    unexpectedInput.checked = Boolean(expense.unexpected);
     submitBtn.textContent = 'Update expense';
     cancelEditBtn.hidden = false;
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -339,9 +360,9 @@ exportJsonBtn.addEventListener('click', async () => {
 exportCsvBtn.addEventListener('click', async () => {
   const expenses = await getAllExpenses();
   expenses.sort((a, b) => (a.date < b.date ? -1 : 1));
-  const header = 'date,category,amount,note';
+  const header = 'date,category,amount,note,unexpected';
   const csvEscape = (s) => `"${String(s).replace(/"/g, '""')}"`;
-  const rows = expenses.map((e) => [e.date, csvEscape(e.category), e.amount.toFixed(2), csvEscape(e.note || '')].join(','));
+  const rows = expenses.map((e) => [e.date, csvEscape(e.category), e.amount.toFixed(2), csvEscape(e.note || ''), e.unexpected ? 'yes' : 'no'].join(','));
   downloadFile(`expenses-${todayStr()}.csv`, [header, ...rows].join('\n'), 'text/csv');
 });
 

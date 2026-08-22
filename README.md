@@ -57,12 +57,14 @@ the offline/install behaviour.
 | File | Responsibility |
 |---|---|
 | `index.html` | Markup / app shell — expense tracker |
-| `budget.html` | Live-editable monthly budget targets per category |
+| `budget.html` | Live-editable monthly budget targets per category, plus actual income logged |
 | `health.html` | Quit-smoking daily log + money saved + actual Health/Quit-Smoking spend |
+| `income.html` | Income log — date, source, amount, note |
 | `style.css` | Styling (shared by all pages) |
-| `app.js` | Expense tracker logic: IndexedDB CRUD, categories, rendering, export/import |
-| `budget.js` | Budget page logic: per-category targets + net income, saved to localStorage as you type |
+| `app.js` | Expense tracker logic: IndexedDB CRUD, categories, unexpected-expense flag, export/import |
+| `budget.js` | Budget page logic: per-category targets + net income (localStorage), reads actual income (IndexedDB) |
 | `health.js` | Health page logic: manual smoke-free log, streak/savings maths, reads expense DB for actual spend |
+| `income.js` | Income page logic: IndexedDB CRUD for the `income` store, export/import |
 | `manifest.json` | PWA metadata (name, icon, install behaviour) |
 | `sw.js` | Service worker — caches the app shell for offline use |
 | `icon.svg` / `icon-192.png` / `icon-512.png` | App icon |
@@ -70,8 +72,15 @@ the offline/install behaviour.
 
 ## Income and unexpected expenses
 
-Not tracked yet. The app only logs money going out; "Net income" on the Budget page is a
-number you type in, not a live ledger of income events. Ask for an Income log if you want
-actual side-income entries tracked over time instead. Unexpected expenses currently have no
-special handling — log them under whichever category fits, or add an "Unexpected" category
-yourself under Manage Categories.
+Both tracked now. **Income** (`income.html`) is a separate log — date, source, amount, note —
+stored in its own IndexedDB store (`income`), same device-only model as expenses. The Budget
+page shows it alongside your typed-in "Net income" assumption so you can compare plan vs
+actual. **Unexpected expenses**: tick "Unexpected expense" on the entry form on the Expenses
+page; flagged entries show an "Unexpected" badge in the history and roll up into an
+unexpected-spend total for the current month, shown under the month total.
+
+The database (`expenseTrackerDB`, version 2) has two object stores: `expenses` and `income`.
+Any page that touches IndexedDB (`app.js`, `budget.js`, `health.js`, `income.js`) runs the same
+`onupgradeneeded` logic that creates both stores if missing — this matters because a visitor
+can land on any page first (e.g. Health before ever opening Expenses), and the database must
+exist correctly regardless of entry point.

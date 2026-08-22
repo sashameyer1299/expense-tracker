@@ -1,4 +1,40 @@
-// Live-editable budget targets — same storage model as the tracker: localStorage only, no network.
+// Live-editable budget targets — same storage model as the tracker: localStorage for targets,
+// IndexedDB (read-only) to pull actual income logged this month. No network calls.
+
+const DB_NAME = 'expenseTrackerDB';
+const DB_VERSION = 2;
+
+function openDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    req.onupgradeneeded = () => {
+      const db = req.result;
+      if (!db.objectStoreNames.contains('expenses')) {
+        const store = db.createObjectStore('expenses', { keyPath: 'id', autoIncrement: true });
+        store.createIndex('date', 'date');
+      }
+      if (!db.objectStoreNames.contains('income')) {
+        const store = db.createObjectStore('income', { keyPath: 'id', autoIncrement: true });
+        store.createIndex('date', 'date');
+      }
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function getAllIncome() {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('income', 'readonly');
+    const req = tx.objectStore('income').getAll();
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+const todayStr = () => new Date().toISOString().slice(0, 10);
+const monthKey = (dateStr) => dateStr.slice(0, 7);
 
 const DEFAULT_CATEGORIES = [
   '1 · Rent', '1 · Food & Groceries', '1 · Utilities', '1 · Transport', '1 · Family & Kids', '1 · Medical',
@@ -58,6 +94,7 @@ const netIncomeInput = document.getElementById('netIncome');
 const groupsEl = document.getElementById('budgetGroups');
 const totalBudgetedEl = document.getElementById('totalBudgeted');
 const totalIncomeEl = document.getElementById('totalIncome');
+const actualIncomeEl = document.getElementById('actualIncome');
 const remainingEl = document.getElementById('remaining');
 
 netIncomeInput.value = loadNetIncome();
@@ -96,7 +133,7 @@ function render() {
   updateTotals();
 }
 
-function updateTotals() {
+async function updateTotals() {
   const totalBudgeted = categories.reduce((sum, c) => sum + (parseFloat(targets[c]) || 0), 0);
   const netIncome = parseFloat(netIncomeInput.value) || 0;
   const remaining = netIncome - totalBudgeted;
@@ -105,6 +142,11 @@ function updateTotals() {
   totalIncomeEl.textContent = money(netIncome);
   remainingEl.textContent = money(remaining);
   remainingEl.classList.toggle('over', remaining < 0);
+
+  const income = await getAllIncome();
+  const key = monthKey(todayStr());
+  const actualIncome = income.filter((e) => monthKey(e.date) === key).reduce((sum, e) => sum + e.amount, 0);
+  actualIncomeEl.textContent = money(actualIncome);
 }
 
 groupsEl.addEventListener('input', (ev) => {
