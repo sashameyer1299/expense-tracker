@@ -61,7 +61,7 @@ the offline/install behaviour.
 | `health.html` | Quit-smoking daily log + money saved + actual Health/Quit-Smoking spend |
 | `income.html` | Income log — date, source, amount, note |
 | `style.css` | Styling (shared by all pages) |
-| `app.js` | Expense tracker logic: IndexedDB CRUD, categories, unexpected-expense flag, export/import |
+| `app.js` | Expense tracker logic: IndexedDB CRUD, free-text category + urgency (1-5), unexpected-expense flag, export/import |
 | `budget.js` | Budget page logic: per-category targets + net income (localStorage), reads actual income (IndexedDB) |
 | `health.js` | Health page logic: manual smoke-free log, streak/savings maths, reads expense DB for actual spend |
 | `income.js` | Income page logic: IndexedDB CRUD for the `income` store, export/import |

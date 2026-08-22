@@ -37,11 +37,17 @@ const todayStr = () => new Date().toISOString().slice(0, 10);
 const monthKey = (dateStr) => dateStr.slice(0, 7);
 
 const DEFAULT_CATEGORIES = [
-  '1 · Rent', '1 · Food & Groceries', '1 · Utilities', '1 · Transport', '1 · Family & Kids', '1 · Medical',
-  '2 · Health & Fitness', '2 · Quit-Smoking',
-  '3 · Track 1 Setup (Freelance)',
-  '4 · Homelab / Tooling (gated)',
-  '5 · Other',
+  { name: 'Rent', urgency: 1 },
+  { name: 'Food & Groceries', urgency: 1 },
+  { name: 'Utilities', urgency: 1 },
+  { name: 'Transport', urgency: 1 },
+  { name: 'Family & Kids', urgency: 1 },
+  { name: 'Medical', urgency: 1 },
+  { name: 'Health & Fitness', urgency: 2 },
+  { name: 'Quit-Smoking', urgency: 2 },
+  { name: 'Track 1 Setup (Freelance)', urgency: 3 },
+  { name: 'Homelab / Tooling (gated)', urgency: 4 },
+  { name: 'Other', urgency: 5 },
 ];
 
 const GROUP_LABELS = {
@@ -99,15 +105,10 @@ const remainingEl = document.getElementById('remaining');
 
 netIncomeInput.value = loadNetIncome();
 
-function groupKeyOf(category) {
-  const match = category.match(/^(\d)/);
-  return match ? match[1] : '5';
-}
-
 function render() {
   const groups = new Map();
   for (const c of categories) {
-    const key = groupKeyOf(c);
+    const key = String(c.urgency);
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key).push(c);
   }
@@ -120,9 +121,9 @@ function render() {
         .map(
           (c) => `
         <div class="budgetRow">
-          <label for="target-${escapeHtml(c)}">${escapeHtml(c)}</label>
-          <input type="number" step="0.01" min="0" class="targetInput" data-category="${escapeHtml(c)}"
-            id="target-${escapeHtml(c)}" value="${targets[c] || ''}" placeholder="0.00">
+          <label for="target-${escapeHtml(c.name)}">${escapeHtml(c.name)}</label>
+          <input type="number" step="0.01" min="0" class="targetInput" data-category="${escapeHtml(c.name)}"
+            id="target-${escapeHtml(c.name)}" value="${targets[c.name] || ''}" placeholder="0.00">
         </div>`
         )
         .join('');
@@ -134,7 +135,7 @@ function render() {
 }
 
 async function updateTotals() {
-  const totalBudgeted = categories.reduce((sum, c) => sum + (parseFloat(targets[c]) || 0), 0);
+  const totalBudgeted = categories.reduce((sum, c) => sum + (parseFloat(targets[c.name]) || 0), 0);
   const netIncome = parseFloat(netIncomeInput.value) || 0;
   const remaining = netIncome - totalBudgeted;
 

@@ -66,10 +66,12 @@ as current figures.
 
 ## How this maps to the app
 
-The category names above match `DEFAULT_CATEGORIES` in `app.js` exactly (numbered prefixes and
-all), so entries logged in the tracker sum up against this structure without any renaming.
-Add or edit categories in the app's **Manage categories** panel — keep this file in sync if you
-do, so the priority mapping stays legible.
+Category and priority are separate fields in the app now, not one combined string. Each
+expense has a free-typed **category** name (e.g. "Rent") and a selected **urgency** (1–5,
+matching the sections above). The category input suggests known names as you type but accepts
+anything; typing a new one adds it to the list automatically at whatever urgency you picked. The
+five sections above correspond to urgency 1 through 5 — that mapping is what groups the Budget
+page's targets and what the Health page uses to isolate urgency-2 (Health) spend.
 
 ## Next step
 

@@ -51,6 +51,19 @@ h2 { font-size: 1rem; color: var(--text-dim); margin: 1.5rem 0 0.5rem; }
   padding-bottom: 0.5rem;
 }
 
+.urgencyTag {
+  display: inline-block;
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.05rem 0.35rem;
+  vertical-align: middle;
+}
+
+.categoryList small { color: var(--text-dim); }
+
 .badge {
   display: inline-block;
   font-size: 0.65rem;

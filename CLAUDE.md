@@ -36,7 +36,12 @@ new file to `APP_SHELL` when changing what's cached, so installed clients pick u
   explicitly asks — this must stay editable and deployable by pushing static files as-is.
 - No third-party scripts, fonts, or CDNs. Everything self-contained.
 
-## Categories
+## Categories and urgency
 
-The default category list in `app.js` (`DEFAULT_CATEGORIES`) mirrors the household budget's
-priority order — see `BUDGET.md`. If the budget structure changes, update both in sync.
+Category and urgency (1-5, matching `BUDGET.md`'s priority order) are separate fields, not one
+combined string. `DEFAULT_CATEGORIES` in `app.js`/`budget.js` is an array of `{ name, urgency }`.
+The Expenses page's category input is a free-text `<input>` with a `<datalist>` for known names
+(typable, not locked to a picklist) plus a required urgency `<select>`; typing a new category
+name auto-registers it in the categories list at the chosen urgency. Every expense record stores
+`urgency` directly — Health and Budget filter/group on `e.urgency`, not by re-parsing the
+category name, so don't reintroduce a text-prefix convention for priority.

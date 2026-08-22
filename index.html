@@ -36,7 +36,18 @@
     </div>
     <div class="field">
       <label for="category">Category</label>
-      <select id="category" required></select>
+      <input type="text" id="category" list="categoryOptions" required placeholder="e.g. Rent">
+      <datalist id="categoryOptions"></datalist>
+    </div>
+    <div class="field">
+      <label for="urgency">Urgency</label>
+      <select id="urgency" required>
+        <option value="1">1 — Household floor</option>
+        <option value="2">2 — Health</option>
+        <option value="3">3 — Track 1 setup</option>
+        <option value="4">4 — Homelab / tooling (gated)</option>
+        <option value="5">5 — Everything else</option>
+      </select>
     </div>
     <div class="field">
       <label for="note">Note (optional)</label>
@@ -56,6 +67,13 @@
     <ul id="categoryList" class="categoryList"></ul>
     <div class="field inline">
       <input type="text" id="newCategory" placeholder="New category name">
+      <select id="newCategoryUrgency">
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="4">4</option>
+        <option value="5" selected>5</option>
+      </select>
       <button type="button" id="addCategoryBtn">Add</button>
     </div>
   </details>

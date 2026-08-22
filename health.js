@@ -2,7 +2,7 @@
 
 const DB_NAME = 'expenseTrackerDB';
 const DB_VERSION = 2;
-const HEALTH_GROUP = '2';
+const HEALTH_URGENCY = 2;
 
 function openDB() {
   return new Promise((resolve, reject) => {
@@ -31,11 +31,6 @@ async function getAllExpenses() {
     req.onsuccess = () => resolve(req.result);
     req.onerror = () => reject(req.error);
   });
-}
-
-function groupKeyOf(category) {
-  const match = category.match(/^(\d)/);
-  return match ? match[1] : '5';
 }
 
 const money = (n) => `N$${(isNaN(n) ? 0 : n).toFixed(2)}`;
@@ -154,7 +149,7 @@ async function renderNetSection() {
 
   const expenses = await getAllExpenses();
   const monthSpent = expenses
-    .filter((e) => monthKey(e.date) === key && groupKeyOf(e.category) === HEALTH_GROUP)
+    .filter((e) => monthKey(e.date) === key && e.urgency === HEALTH_URGENCY)
     .reduce((sum, e) => sum + e.amount, 0);
 
   monthSavedEl.textContent = money(monthSaved);
