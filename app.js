@@ -178,7 +178,7 @@ function renderCategoryOptions() {
 function renderCategoryManager() {
   categoryListEl.innerHTML = categories
     .map(
-      (c, i) => `<li><span>${escapeHtml(c.name)} <small>(urgency ${c.urgency})</small></span><button type="button" data-idx="${i}" class="removeCategoryBtn">Remove</button></li>`
+      (c, i) => `<li data-name="${escapeHtml(c.name)}"><span class="dragHandle">&#9776;</span><span>${escapeHtml(c.name)} <small>(urgency ${c.urgency})</small></span><button type="button" data-idx="${i}" class="removeCategoryBtn">Remove</button></li>`
     )
     .join('');
 }
@@ -381,6 +381,56 @@ categoryListEl.addEventListener('click', (ev) => {
   saveCategories(categories);
   renderCategoryOptions();
   renderCategoryManager();
+});
+
+// ---------- Hold-and-drag to reorder categories (touch only, no library) ----------
+
+let dragEl = null;
+let dragging = false;
+let longPressTimer = null;
+
+categoryListEl.addEventListener(
+  'touchstart',
+  (ev) => {
+    const li = ev.target.closest('li');
+    if (!li || ev.target.closest('.removeCategoryBtn')) return;
+    longPressTimer = setTimeout(() => {
+      dragging = true;
+      dragEl = li;
+      li.classList.add('dragging');
+    }, 350);
+  },
+  { passive: true }
+);
+
+categoryListEl.addEventListener(
+  'touchmove',
+  (ev) => {
+    if (!dragging || !dragEl) {
+      clearTimeout(longPressTimer);
+      return;
+    }
+    ev.preventDefault();
+    const touchY = ev.touches[0].clientY;
+    const siblings = [...categoryListEl.querySelectorAll('li:not(.dragging)')];
+    const next = siblings.find((sib) => touchY < sib.getBoundingClientRect().top + sib.getBoundingClientRect().height / 2);
+    if (next) categoryListEl.insertBefore(dragEl, next);
+    else categoryListEl.appendChild(dragEl);
+  },
+  { passive: false }
+);
+
+categoryListEl.addEventListener('touchend', () => {
+  clearTimeout(longPressTimer);
+  if (dragging && dragEl) {
+    dragEl.classList.remove('dragging');
+    const newOrder = [...categoryListEl.querySelectorAll('li')].map((li) => li.dataset.name);
+    categories.sort((a, b) => newOrder.indexOf(a.name) - newOrder.indexOf(b.name));
+    saveCategories(categories);
+    renderCategoryManager();
+  }
+  dragging = false;
+  dragEl = null;
 });
 
 // ---------- Export / Import ----------

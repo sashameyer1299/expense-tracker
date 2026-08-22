@@ -65,6 +65,7 @@ the offline/install behaviour.
 | `budget.js` | Budget page logic: per-category targets + net income (localStorage), reads actual income (IndexedDB) |
 | `health.js` | Health page logic: manual smoke-free log, streak/savings maths, reads expense DB for actual spend |
 | `income.js` | Income page logic: IndexedDB CRUD for the `income` store, export/import |
+| `nav-swipe.js` | Shared: swipe left/right to move between pages (Expenses → Budget → Health → Income) |
 | `manifest.json` | PWA metadata (name, icon, install behaviour) |
 | `sw.js` | Service worker — caches the app shell for offline use |
 | `icon.svg` / `icon-192.png` / `icon-512.png` | App icon |

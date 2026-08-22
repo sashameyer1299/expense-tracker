@@ -249,9 +249,23 @@ ul.categoryList li {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 0.5rem;
   padding: 0.4rem 0;
   border-bottom: 1px solid var(--border);
   font-size: 0.9rem;
+  background: var(--bg);
+  touch-action: pan-y;
+}
+ul.categoryList li.dragging {
+  opacity: 0.5;
+  background: var(--surface-2);
+}
+ul.categoryList li > span:nth-child(2) { flex: 1; }
+.dragHandle {
+  color: var(--text-dim);
+  font-size: 0.9rem;
+  cursor: grab;
+  flex: none;
 }
 ul.categoryList button { flex: none; padding: 0.2rem 0.6rem; min-height: auto; background: var(--surface-2); color: var(--danger); }
 

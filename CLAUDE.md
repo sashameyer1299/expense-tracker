@@ -14,6 +14,13 @@ duplication across files — e.g. `openDB()` — is intentional, not an oversigh
 - **Health** (`health.html`/`health.js`) — quit-smoking log + actual health-category spend.
 - **Income** (`income.html`/`income.js`) — the income log.
 
+`nav-swipe.js` is shared across all four pages (one file, not duplicated per page) — it's
+generic page-order navigation, not page-specific logic, so it doesn't follow the
+per-page-duplication convention the DB helpers do. Swipe left/right moves between pages in
+`PAGE_ORDER`. It ignores touches starting inside `.categoryList`, which has its own touch
+handling for long-press-drag reordering (in `app.js`) — don't remove that guard, the two
+gesture handlers would otherwise fight over the same touch events.
+
 Data lives in the browser only, nothing sent over the network at runtime — keep it that way:
 - **IndexedDB** (`expenseTrackerDB`, currently version 2) with two object stores: `expenses` and
   `income`. Every page that opens the DB runs the same `onupgradeneeded` block that creates both
