@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f1115">
+<title>Expenses</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <h1>Expenses</h1>
+  <div id="monthSummary" class="monthSummary"></div>
+</header>
+
+<main>
+  <form id="expenseForm">
+    <input type="hidden" id="editId">
+    <div class="field">
+      <label for="date">Date</label>
+      <input type="date" id="date" required>
+    </div>
+    <div class="field">
+      <label for="amount">Amount (N$)</label>
+      <input type="number" id="amount" step="0.01" min="0" inputmode="decimal" required>
+    </div>
+    <div class="field">
+      <label for="category">Category</label>
+      <select id="category" required></select>
+    </div>
+    <div class="field">
+      <label for="note">Note (optional)</label>
+      <input type="text" id="note" placeholder="e.g. taxi to site">
+    </div>
+    <div class="formActions">
+      <button type="submit" id="submitBtn">Add expense</button>
+      <button type="button" id="cancelEditBtn" hidden>Cancel</button>
+    </div>
+  </form>
+
+  <details class="categoryManager">
+    <summary>Manage categories</summary>
+    <ul id="categoryList" class="categoryList"></ul>
+    <div class="field inline">
+      <input type="text" id="newCategory" placeholder="New category name">
+      <button type="button" id="addCategoryBtn">Add</button>
+    </div>
+  </details>
+
+  <section id="summary">
+    <h2>This month by category</h2>
+    <ul id="categorySummary" class="categorySummary"></ul>
+  </section>
+
+  <section id="history">
+    <h2>History</h2>
+    <div id="expenseGroups"></div>
+  </section>
+</main>
+
+<footer>
+  <button type="button" id="exportJsonBtn">Export JSON</button>
+  <button type="button" id="exportCsvBtn">Export CSV</button>
+  <label class="importLabel">
+    Import JSON
+    <input type="file" id="importFile" accept="application/json" hidden>
+  </label>
+</footer>
+
+<script src="app.js" defer></script>
+</body>
+</html>
