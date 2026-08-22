@@ -192,6 +192,7 @@ form {
 .field { margin-bottom: 0.75rem; display: flex; flex-direction: column; gap: 0.3rem; }
 .field.inline { flex-direction: row; align-items: center; }
 .field.inline input { flex: 1; }
+.field.inline select { flex: 0 0 auto; width: auto; }
 .field.checkboxField label { display: flex; align-items: center; gap: 0.5rem; color: var(--text); font-size: 0.9rem; }
 .field.checkboxField input { width: auto; min-height: auto; }
 
