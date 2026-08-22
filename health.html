@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f1115">
+<title>Health</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <h1>Health</h1>
+  <nav class="pageNav">
+    <a class="navLink" href="index.html">Expenses</a>
+    <a class="navLink" href="budget.html">Budget</a>
+    <span class="navActive">Health</span>
+  </nav>
+</header>
+
+<main>
+  <section class="quitSection">
+    <h2>Quit-smoking log</h2>
+
+    <div class="field">
+      <label for="dailyCost">What you used to spend per day (N$)</label>
+      <input type="number" id="dailyCost" step="0.01" min="0">
+    </div>
+
+    <div class="todayCard">
+      <div class="todayDate" id="todayDate"></div>
+      <div class="todayActions">
+        <button type="button" id="cleanBtn" class="cleanBtn">Smoke-free today</button>
+        <button type="button" id="slipBtn" class="slipBtn">I smoked today</button>
+      </div>
+      <div class="todayStatus" id="todayStatus"></div>
+    </div>
+
+    <div class="statRow">
+      <div class="stat"><span id="streak">0</span><small>day streak</small></div>
+      <div class="stat"><span id="cleanDays">0</span><small>smoke-free days logged</small></div>
+      <div class="stat accent"><span id="moneySaved">N$0</span><small>saved all-time</small></div>
+    </div>
+
+    <h2>Log history</h2>
+    <div id="logHistory"></div>
+  </section>
+
+  <section class="netSection">
+    <h2>This month — net health picture</h2>
+    <div class="totalRow"><span>Saved by not smoking</span><span id="monthSaved">N$0.00</span></div>
+    <div class="totalRow"><span>Spent on Health &amp; Quit-Smoking</span><span id="monthSpent">N$0.00</span></div>
+    <div class="totalRow remaining"><span>Net this month</span><span id="netHealth">N$0.00</span></div>
+  </section>
+</main>
+
+<script src="health.js" defer></script>
+</body>
+</html>

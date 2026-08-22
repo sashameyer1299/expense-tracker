@@ -58,10 +58,20 @@ the offline/install behaviour.
 |---|---|
 | `index.html` | Markup / app shell — expense tracker |
 | `budget.html` | Live-editable monthly budget targets per category |
-| `style.css` | Styling (shared by both pages) |
+| `health.html` | Quit-smoking daily log + money saved + actual Health/Quit-Smoking spend |
+| `style.css` | Styling (shared by all pages) |
 | `app.js` | Expense tracker logic: IndexedDB CRUD, categories, rendering, export/import |
 | `budget.js` | Budget page logic: per-category targets + net income, saved to localStorage as you type |
+| `health.js` | Health page logic: manual smoke-free log, streak/savings maths, reads expense DB for actual spend |
 | `manifest.json` | PWA metadata (name, icon, install behaviour) |
 | `sw.js` | Service worker — caches the app shell for offline use |
 | `icon.svg` / `icon-192.png` / `icon-512.png` | App icon |
 | `BUDGET.md` | Category structure reference and priority rationale — actual figures live in `budget.html` |
+
+## Income and unexpected expenses
+
+Not tracked yet. The app only logs money going out; "Net income" on the Budget page is a
+number you type in, not a live ledger of income events. Ask for an Income log if you want
+actual side-income entries tracked over time instead. Unexpected expenses currently have no
+special handling — log them under whichever category fits, or add an "Unexpected" category
+yourself under Manage Categories.
