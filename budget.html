@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f1115">
+<title>Budget</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <h1>Budget</h1>
+  <a class="navLink" href="index.html">&larr; Expenses</a>
+</header>
+
+<main>
+  <div class="field">
+    <label for="netIncome">Net income (N$/month)</label>
+    <input type="number" id="netIncome" step="0.01" min="0">
+  </div>
+
+  <div id="budgetGroups"></div>
+
+  <div class="budgetTotals">
+    <div class="totalRow"><span>Total budgeted</span><span id="totalBudgeted">N$0.00</span></div>
+    <div class="totalRow"><span>Net income</span><span id="totalIncome">N$0.00</span></div>
+    <div class="totalRow remaining"><span>Remaining</span><span id="remaining">N$0.00</span></div>
+  </div>
+
+  <p class="hint">Edits save automatically as you type — nothing to click. Add or remove categories from the Expenses page; they'll show up here too.</p>
+</main>
+
+<script src="budget.js" defer></script>
+</body>
+</html>

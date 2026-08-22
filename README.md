@@ -56,10 +56,12 @@ the offline/install behaviour.
 
 | File | Responsibility |
 |---|---|
-| `index.html` | Markup / app shell |
-| `style.css` | Styling |
-| `app.js` | All app logic: IndexedDB CRUD, categories, rendering, export/import |
+| `index.html` | Markup / app shell — expense tracker |
+| `budget.html` | Live-editable monthly budget targets per category |
+| `style.css` | Styling (shared by both pages) |
+| `app.js` | Expense tracker logic: IndexedDB CRUD, categories, rendering, export/import |
+| `budget.js` | Budget page logic: per-category targets + net income, saved to localStorage as you type |
 | `manifest.json` | PWA metadata (name, icon, install behaviour) |
 | `sw.js` | Service worker — caches the app shell for offline use |
-| `icon.svg` | App icon |
-| `BUDGET.md` | Category structure reference, aligned to the household budget priority order |
+| `icon.svg` / `icon-192.png` / `icon-512.png` | App icon |
+| `BUDGET.md` | Category structure reference and priority rationale — actual figures live in `budget.html` |

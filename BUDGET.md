@@ -4,8 +4,14 @@ Priority order, per the master plan: household floor → health → Track 1 (fre
 income) setup → gated homelab/tooling spend → everything else. Net income: N$15,100/month.
 Capital available: under N$2,000 for the next 3 months — treat as near-zero.
 
-**Figures below are placeholders — waiting on real numbers. Nothing here is fabricated.**
-Fill in the "Monthly N$" column when ready and this becomes the working budget.
+**The live, editable numbers now live in the app, not this file** — open `budget.html` (linked
+from the Expenses page header). It's a per-category input table that saves as you type, backed
+by the same localStorage-only model as the rest of the app: no git commits needed to update a
+figure, nothing leaves the phone. This file stays as the priority-order reference and rationale;
+treat the app as the source of truth for actual amounts.
+
+The tables below are placeholders only, kept for context on the structure — do not treat them
+as current figures.
 
 ## 1. Household floor (wife + 2 daughters) — highest priority
 
