@@ -1,6 +1,6 @@
 // Cache-first service worker for the app shell — makes the PWA work fully offline after first load.
 
-const CACHE_NAME = 'expense-tracker-v9';
+const CACHE_NAME = 'expense-tracker-v10';
 const APP_SHELL = [
   './', './index.html', './style.css', './app.js', './manifest.json',
   './icon.svg', './icon-192.png', './icon-512.png',
@@ -10,7 +10,14 @@ const APP_SHELL = [
 ];
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL)));
+  // cache: 'reload' bypasses the browser's regular HTTP cache (GitHub Pages sets a 10-minute
+  // max-age on every file) so a new service worker always re-caches genuinely fresh files
+  // instead of possibly re-caching the same stale response that's still HTTP-cache-valid.
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) =>
+      Promise.all(APP_SHELL.map((url) => fetch(url, { cache: 'reload' }).then((res) => cache.put(url, res))))
+    )
+  );
   self.skipWaiting();
 });
 
