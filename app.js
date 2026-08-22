@@ -166,6 +166,7 @@ const expenseGroupsEl = document.getElementById('expenseGroups');
 
 const exportJsonBtn = document.getElementById('exportJsonBtn');
 const exportCsvBtn = document.getElementById('exportCsvBtn');
+const exportPdfBtn = document.getElementById('exportPdfBtn');
 const importFile = document.getElementById('importFile');
 
 // ---------- Rendering ----------
@@ -409,6 +410,10 @@ exportCsvBtn.addEventListener('click', async () => {
   const csvEscape = (s) => `"${String(s).replace(/"/g, '""')}"`;
   const rows = expenses.map((e) => [e.date, csvEscape(e.category), e.urgency || '', e.amount.toFixed(2), csvEscape(e.note || ''), e.unexpected ? 'yes' : 'no'].join(','));
   downloadFile(`expenses-${todayStr()}.csv`, [header, ...rows].join('\n'), 'text/csv');
+});
+
+exportPdfBtn.addEventListener('click', () => {
+  window.print();
 });
 
 importFile.addEventListener('change', async (ev) => {

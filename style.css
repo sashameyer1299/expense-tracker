@@ -317,3 +317,24 @@ footer {
   font-size: 1rem;
   cursor: pointer;
 }
+
+/* Export PDF uses the browser's own Print -> Save as PDF, no library needed.
+   This makes the printed/saved output a clean readable document instead of the dark UI. */
+@media print {
+  body { background: #fff; color: #000; padding-bottom: 0; }
+  header nav, form, .categoryManager, footer { display: none !important; }
+  header { position: static; border-bottom: 1px solid #000; }
+  main { max-width: none; }
+  h1, h2, h3 { color: #000; }
+  .monthSummary, .monthSummary small, .unexpectedSummary { color: #000; }
+  .expenseRow, .monthGroup, .stat, .budgetRow, .todayCard, .netSection, .budgetTotals,
+  .categorySummary li, .totalRow {
+    background: #fff !important;
+    border-color: #ccc !important;
+    color: #000 !important;
+    box-shadow: none !important;
+  }
+  .badge, .urgencyTag { border-color: #000; color: #000; }
+  .logClean, .logSlip, .stat.accent span { color: #000 !important; }
+  a { color: #000; text-decoration: none; }
+}

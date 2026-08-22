@@ -86,6 +86,7 @@ const monthSummaryEl = document.getElementById('monthSummary');
 const incomeGroupsEl = document.getElementById('incomeGroups');
 const exportJsonBtn = document.getElementById('exportJsonBtn');
 const exportCsvBtn = document.getElementById('exportCsvBtn');
+const exportPdfBtn = document.getElementById('exportPdfBtn');
 
 async function renderAll() {
   const entries = await getAllIncome();
@@ -223,6 +224,10 @@ exportCsvBtn.addEventListener('click', async () => {
   const csvEscape = (s) => `"${String(s).replace(/"/g, '""')}"`;
   const rows = entries.map((e) => [e.date, csvEscape(e.source), e.amount.toFixed(2), csvEscape(e.note || '')].join(','));
   downloadFile(`income-${todayStr()}.csv`, [header, ...rows].join('\n'), 'text/csv');
+});
+
+exportPdfBtn.addEventListener('click', () => {
+  window.print();
 });
 
 dateInput.value = todayStr();
