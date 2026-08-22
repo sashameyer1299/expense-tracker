@@ -96,12 +96,28 @@ async function clearExpenses() {
 
 // ---------- Categories (localStorage) ----------
 
+// Handles categories saved before urgency was split out — old shape was a plain string like
+// "1 · Rent" instead of { name: 'Rent', urgency: 1 }.
+function normalizeCategory(item) {
+  if (item && typeof item === 'object' && typeof item.name === 'string') {
+    return { name: item.name, urgency: item.urgency || 5 };
+  }
+  const text = String(item);
+  const match = text.match(/^(\d)\s*·\s*(.+)$/);
+  if (match) return { name: match[2].trim(), urgency: parseInt(match[1], 10) };
+  return { name: text.trim(), urgency: 5 };
+}
+
 function loadCategories() {
   try {
     const raw = localStorage.getItem('categories');
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length) return parsed;
+      if (Array.isArray(parsed) && parsed.length) {
+        const migrated = parsed.map(normalizeCategory);
+        saveCategories(migrated);
+        return migrated;
+      }
     }
   } catch (e) { /* fall through to defaults */ }
   saveCategories(DEFAULT_CATEGORIES);
@@ -427,13 +443,24 @@ importFile.addEventListener('change', async (ev) => {
   renderAll();
 });
 
+// ---------- One-time migration for expenses saved before urgency was split out ----------
+
+async function migrateExpenses() {
+  const expenses = await getAllExpenses();
+  for (const e of expenses) {
+    if (e.urgency) continue; // already migrated / already has urgency
+    const normalized = normalizeCategory(e.category);
+    await putExpense({ ...e, category: normalized.name, urgency: normalized.urgency });
+  }
+}
+
 // ---------- Init ----------
 
 dateInput.value = todayStr();
 urgencyInput.value = '5';
 renderCategoryOptions();
 renderCategoryManager();
-renderAll();
+migrateExpenses().then(renderAll);
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {

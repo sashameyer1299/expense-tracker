@@ -58,12 +58,28 @@ const GROUP_LABELS = {
   5: '5 · Everything else',
 };
 
+// Handles categories saved before urgency was split out — old shape was a plain string like
+// "1 · Rent" instead of { name: 'Rent', urgency: 1 }.
+function normalizeCategory(item) {
+  if (item && typeof item === 'object' && typeof item.name === 'string') {
+    return { name: item.name, urgency: item.urgency || 5 };
+  }
+  const text = String(item);
+  const match = text.match(/^(\d)\s*·\s*(.+)$/);
+  if (match) return { name: match[2].trim(), urgency: parseInt(match[1], 10) };
+  return { name: text.trim(), urgency: 5 };
+}
+
 function loadCategories() {
   try {
     const raw = localStorage.getItem('categories');
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length) return parsed;
+      if (Array.isArray(parsed) && parsed.length) {
+        const migrated = parsed.map(normalizeCategory);
+        localStorage.setItem('categories', JSON.stringify(migrated));
+        return migrated;
+      }
     }
   } catch (e) { /* fall through to defaults */ }
   return DEFAULT_CATEGORIES.slice();
