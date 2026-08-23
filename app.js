@@ -1,7 +1,7 @@
 // Expense Tracker — vanilla JS, IndexedDB storage, no backend, no network calls.
 
 const DB_NAME = 'expenseTrackerDB';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 const STORE = 'expenses';
 
 // Each category is { name, urgency } — urgency is the 1-5 priority scale (1 = household floor
@@ -35,6 +35,9 @@ function openDB() {
       if (!db.objectStoreNames.contains('income')) {
         const store = db.createObjectStore('income', { keyPath: 'id', autoIncrement: true });
         store.createIndex('date', 'date');
+      }
+      if (!db.objectStoreNames.contains('debts')) {
+        db.createObjectStore('debts', { keyPath: 'id', autoIncrement: true });
       }
     };
     req.onsuccess = () => resolve(req.result);
@@ -91,6 +94,37 @@ async function clearExpenses() {
     const req = tx.objectStore(STORE).clear();
     req.onsuccess = () => resolve();
     req.onerror = () => reject(req.error);
+  });
+}
+
+async function getAllDebts() {
+  const db = await dbPromise;
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('debts', 'readonly');
+    const req = tx.objectStore('debts').getAll();
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+// delta is added to the debt's balance — pass a negative amount to apply a payment, a positive
+// amount to reverse one (e.g. when a linked expense is edited or deleted).
+async function adjustDebtBalance(debtId, delta) {
+  if (!debtId) return;
+  const db = await dbPromise;
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('debts', 'readwrite');
+    const store = tx.objectStore('debts');
+    const req = store.get(Number(debtId));
+    req.onsuccess = () => {
+      const debt = req.result;
+      if (debt) {
+        debt.balance += delta;
+        store.put(debt);
+      }
+    };
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
   });
 }
 
@@ -151,6 +185,7 @@ const categoryOptionsEl = document.getElementById('categoryOptions');
 const urgencyInput = document.getElementById('urgency');
 const noteInput = document.getElementById('note');
 const unexpectedInput = document.getElementById('unexpected');
+const debtLinkInput = document.getElementById('debtLink');
 const submitBtn = document.getElementById('submitBtn');
 const cancelEditBtn = document.getElementById('cancelEditBtn');
 
@@ -169,7 +204,21 @@ const exportCsvBtn = document.getElementById('exportCsvBtn');
 const exportPdfBtn = document.getElementById('exportPdfBtn');
 const importFile = document.getElementById('importFile');
 
+// Stashed when entering edit mode so a debt-linked expense's old effect can be reversed
+// before the new one is applied — see the submit handler.
+let originalExpense = null;
+let debts = [];
+
 // ---------- Rendering ----------
+
+async function renderDebtOptions() {
+  debts = await getAllDebts();
+  const current = debtLinkInput.value;
+  debtLinkInput.innerHTML =
+    '<option value="">— None —</option>' +
+    debts.map((d) => `<option value="${d.id}">${escapeHtml(d.name)} (${money(d.balance)} owed)</option>`).join('');
+  if (debts.some((d) => String(d.id) === current)) debtLinkInput.value = current;
+}
 
 function renderCategoryOptions() {
   categoryOptionsEl.innerHTML = categories.map((c) => `<option value="${escapeHtml(c.name)}">`).join('');
@@ -271,6 +320,7 @@ function renderHistory(expenses) {
         <div class="expenseRow" data-id="${e.id}">
           <div class="meta">
             <div class="category">${escapeHtml(e.category)} <span class="urgencyTag" title="Urgency ${e.urgency || '?'}">U${e.urgency || '?'}</span>${e.unexpected ? ' <span class="badge">Unexpected</span>' : ''}</div>
+            ${e.debtId ? `<div class="note">&rarr; ${escapeHtml(debts.find((d) => String(d.id) === String(e.debtId))?.name || 'debt')}</div>` : ''}
             ${e.note ? `<div class="note">${escapeHtml(e.note)}</div>` : ''}
             <div class="date">${e.date}</div>
           </div>
@@ -295,6 +345,8 @@ function resetForm() {
   dateInput.value = todayStr();
   urgencyInput.value = '5';
   unexpectedInput.checked = false;
+  debtLinkInput.value = '';
+  originalExpense = null;
   submitBtn.textContent = 'Add expense';
   cancelEditBtn.hidden = true;
 }
@@ -302,6 +354,7 @@ function resetForm() {
 form.addEventListener('submit', async (ev) => {
   ev.preventDefault();
   const categoryName = categoryInput.value.trim();
+  const debtId = debtLinkInput.value || null;
   const expense = {
     date: dateInput.value,
     amount: parseFloat(amountInput.value),
@@ -309,6 +362,7 @@ form.addEventListener('submit', async (ev) => {
     urgency: parseInt(urgencyInput.value, 10),
     note: noteInput.value.trim(),
     unexpected: unexpectedInput.checked,
+    debtId,
   };
   if (!expense.date || isNaN(expense.amount) || expense.amount < 0 || !categoryName) return;
 
@@ -319,14 +373,24 @@ form.addEventListener('submit', async (ev) => {
     renderCategoryManager();
   }
 
+  // Reverse the old debt effect (if any) before applying the new one, so editing a
+  // debt-linked expense's amount or unlinking it doesn't leave the balance wrong.
+  if (originalExpense && originalExpense.debtId) {
+    await adjustDebtBalance(originalExpense.debtId, originalExpense.amount);
+  }
+
   if (editIdInput.value) {
     expense.id = Number(editIdInput.value);
     await putExpense(expense);
   } else {
     await addExpense(expense);
   }
+
+  if (debtId) await adjustDebtBalance(debtId, -expense.amount);
+
   resetForm();
   renderAll();
+  renderDebtOptions();
 });
 
 cancelEditBtn.addEventListener('click', resetForm);
@@ -347,6 +411,8 @@ expenseGroupsEl.addEventListener('click', async (ev) => {
     urgencyInput.value = String(expense.urgency || 5);
     noteInput.value = expense.note || '';
     unexpectedInput.checked = Boolean(expense.unexpected);
+    debtLinkInput.value = expense.debtId || '';
+    originalExpense = expense;
     submitBtn.textContent = 'Update expense';
     cancelEditBtn.hidden = false;
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -355,8 +421,12 @@ expenseGroupsEl.addEventListener('click', async (ev) => {
   if (delBtn) {
     const id = Number(delBtn.dataset.id);
     if (confirm('Delete this expense?')) {
+      const expenses = await getAllExpenses();
+      const expense = expenses.find((e) => e.id === id);
+      if (expense && expense.debtId) await adjustDebtBalance(expense.debtId, expense.amount);
       await deleteExpense(id);
       renderAll();
+      renderDebtOptions();
     }
   }
 });
@@ -515,7 +585,7 @@ dateInput.value = todayStr();
 urgencyInput.value = '5';
 renderCategoryOptions();
 renderCategoryManager();
-migrateExpenses().then(renderAll);
+renderDebtOptions().then(() => migrateExpenses().then(renderAll));
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {

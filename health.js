@@ -1,7 +1,7 @@
 // Health tab — manual quit-smoking log (localStorage) + actual Health/Quit-Smoking spend (IndexedDB, shared with the tracker).
 
 const DB_NAME = 'expenseTrackerDB';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 const HEALTH_URGENCY = 2;
 
 function openDB() {
@@ -16,6 +16,9 @@ function openDB() {
       if (!db.objectStoreNames.contains('income')) {
         const store = db.createObjectStore('income', { keyPath: 'id', autoIncrement: true });
         store.createIndex('date', 'date');
+      }
+      if (!db.objectStoreNames.contains('debts')) {
+        db.createObjectStore('debts', { keyPath: 'id', autoIncrement: true });
       }
     };
     req.onsuccess = () => resolve(req.result);

@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f1115">
+<title>Debts</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <h1>Debts</h1>
+  <nav class="pageNav">
+    <a class="navLink" href="index.html">Expenses</a>
+    <a class="navLink" href="budget.html">Budget</a>
+    <a class="navLink" href="health.html">Health</a>
+    <a class="navLink" href="income.html">Income</a>
+    <span class="navActive">Debts</span>
+  </nav>
+  <div id="totalDebt" class="monthSummary"></div>
+</header>
+
+<main>
+  <form id="debtForm">
+    <input type="hidden" id="editId">
+    <div class="field">
+      <label for="name">Name</label>
+      <input type="text" id="name" required placeholder="e.g. Vehicle finance">
+    </div>
+    <div class="field">
+      <label for="balance">Current balance owed (N$)</label>
+      <input type="number" id="balance" step="0.01" min="0" inputmode="decimal" required>
+    </div>
+    <div class="field">
+      <label for="monthlyPayment">Typical monthly payment (N$)</label>
+      <input type="number" id="monthlyPayment" step="0.01" min="0" inputmode="decimal" placeholder="optional, for the months-to-clear estimate">
+    </div>
+    <div class="field">
+      <label for="note">Note (optional)</label>
+      <input type="text" id="note" placeholder="optional">
+    </div>
+    <div class="formActions">
+      <button type="submit" id="submitBtn">Add debt</button>
+      <button type="button" id="cancelEditBtn" hidden>Cancel</button>
+    </div>
+  </form>
+
+  <p class="hint">
+    To log a payment: add it as a normal expense on the Expenses page and pick this debt under
+    "Debt payment" — the balance below updates automatically. Edit here only to correct a balance
+    or update the typical payment amount.
+  </p>
+
+  <section id="debtsList"></section>
+</main>
+
+<script src="nav-swipe.js" defer></script>
+<script src="debts.js" defer></script>
+</body>
+</html>

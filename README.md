@@ -60,12 +60,14 @@ the offline/install behaviour.
 | `budget.html` | Live-editable monthly budget targets per category, plus actual income logged |
 | `health.html` | Quit-smoking daily log + money saved + actual Health/Quit-Smoking spend |
 | `income.html` | Income log — date, source, amount, note |
+| `debts.html` | Debts — name, balance owed, typical monthly payment, months-to-clear estimate |
 | `style.css` | Styling (shared by all pages) |
 | `app.js` | Expense tracker logic: IndexedDB CRUD, free-text category + urgency (1-5), unexpected-expense flag, export/import |
 | `budget.js` | Budget page logic: per-category targets + net income (localStorage), reads actual income (IndexedDB) |
 | `health.js` | Health page logic: manual smoke-free log, streak/savings maths, reads expense DB for actual spend |
 | `income.js` | Income page logic: IndexedDB CRUD for the `income` store, export/import |
-| `nav-swipe.js` | Shared: swipe left/right to move between pages (Expenses → Budget → Health → Income) |
+| `debts.js` | Debts page logic: IndexedDB CRUD for the `debts` store |
+| `nav-swipe.js` | Shared: swipe left/right to move between pages (Expenses → Budget → Health → Income → Debts) |
 | `manifest.json` | PWA metadata (name, icon, install behaviour) |
 | `sw.js` | Service worker — caches the app shell for offline use |
 | `icon.svg` / `icon-192.png` / `icon-512.png` | App icon |
@@ -80,8 +82,18 @@ actual. **Unexpected expenses**: tick "Unexpected expense" on the entry form on 
 page; flagged entries show an "Unexpected" badge in the history and roll up into an
 unexpected-spend total for the current month, shown under the month total.
 
-The database (`expenseTrackerDB`, version 2) has two object stores: `expenses` and `income`.
-Any page that touches IndexedDB (`app.js`, `budget.js`, `health.js`, `income.js`) runs the same
-`onupgradeneeded` logic that creates both stores if missing — this matters because a visitor
-can land on any page first (e.g. Health before ever opening Expenses), and the database must
-exist correctly regardless of entry point.
+## Debts
+
+`debts.html` tracks what's owed per debt (balance, typical monthly payment, a simple
+balance-÷-payment months-to-clear estimate — no interest amortization). Day-to-day payments are
+logged as normal expenses on the Expenses page: pick the debt under "Debt payment (optional)"
+and the linked debt's balance decreases automatically by that expense's amount. Editing or
+deleting a debt-linked expense correctly reverses its old effect on the balance first. Manage
+Categories-style editing on the Debts page itself is for defining debts and correcting a
+balance directly, not the normal payment flow.
+
+The database (`expenseTrackerDB`, version 3) has three object stores: `expenses`, `income`, and
+`debts`. Any page that touches IndexedDB (`app.js`, `budget.js`, `health.js`, `income.js`,
+`debts.js`) runs the same `onupgradeneeded` logic that creates all three if missing — this
+matters because a visitor can land on any page first (e.g. Health before ever opening
+Expenses), and the database must exist correctly regardless of entry point.

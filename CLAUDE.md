@@ -13,8 +13,12 @@ duplication across files — e.g. `openDB()` — is intentional, not an oversigh
 - **Budget** (`budget.html`/`budget.js`) — editable per-category targets + actual income read.
 - **Health** (`health.html`/`health.js`) — quit-smoking log + actual health-category spend.
 - **Income** (`income.html`/`income.js`) — the income log.
+- **Debts** (`debts.html`/`debts.js`) — debt definitions (name, balance, typical payment).
+  Balances are normally reduced from `app.js` when an expense is linked to a debt via
+  `debtId` — see `adjustDebtBalance()` there. Don't add a second, competing place that mutates
+  debt balances without going through the same reversal logic on edit/delete.
 
-`nav-swipe.js` is shared across all four pages (one file, not duplicated per page) — it's
+`nav-swipe.js` is shared across all five pages (one file, not duplicated per page) — it's
 generic page-order navigation, not page-specific logic, so it doesn't follow the
 per-page-duplication convention the DB helpers do. Swipe left/right moves between pages in
 `PAGE_ORDER`. It ignores touches starting inside `.categoryList`, which has its own touch
@@ -22,11 +26,12 @@ handling for long-press-drag reordering (in `app.js`) — don't remove that guar
 gesture handlers would otherwise fight over the same touch events.
 
 Data lives in the browser only, nothing sent over the network at runtime — keep it that way:
-- **IndexedDB** (`expenseTrackerDB`, currently version 2) with two object stores: `expenses` and
-  `income`. Every page that opens the DB runs the same `onupgradeneeded` block that creates both
-  stores if missing, because a visitor can land on any page first — don't let one page assume
-  another has already initialized the schema. Bump `DB_VERSION` (in all four files that open the
-  DB) if the schema changes again.
+- **IndexedDB** (`expenseTrackerDB`, currently version 3) with three object stores: `expenses`,
+  `income`, and `debts`. Every page that opens the DB runs the same `onupgradeneeded` block that
+  creates all three if missing, because a visitor can land on any page first — don't let one
+  page assume another has already initialized the schema. Bump `DB_VERSION` (in all five files
+  that open the DB: `app.js`, `budget.js`, `health.js`, `income.js`, `debts.js`) if the schema
+  changes again.
 - **localStorage** for the editable category list, budget targets, net income figure, and the
   quit-smoking daily log.
 

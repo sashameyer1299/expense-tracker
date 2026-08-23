@@ -18,6 +18,7 @@
     <a class="navLink" href="budget.html">Budget</a>
     <a class="navLink" href="health.html">Health</a>
     <a class="navLink" href="income.html">Income</a>
+    <a class="navLink" href="debts.html">Debts</a>
   </nav>
   <div id="monthSummary" class="monthSummary"></div>
   <div id="unexpectedSummary" class="unexpectedSummary"></div>
@@ -52,6 +53,12 @@
     <div class="field">
       <label for="note">Note (optional)</label>
       <input type="text" id="note" placeholder="e.g. taxi to site">
+    </div>
+    <div class="field">
+      <label for="debtLink">Debt payment (optional)</label>
+      <select id="debtLink">
+        <option value="">— None —</option>
+      </select>
     </div>
     <div class="field checkboxField">
       <label for="unexpected"><input type="checkbox" id="unexpected"> Unexpected expense</label>
