@@ -589,6 +589,15 @@ renderDebtOptions().then(() => migrateExpenses().then(renderAll));
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js').catch(() => { /* offline install still works without it */ });
+    // updateViaCache: 'none' stops the browser from using its normal HTTP cache (GitHub Pages'
+    // 10-minute max-age) when it checks sw.js itself for changes — without this, the update
+    // check can compare two stale copies and never notice a new version exists at all, even
+    // though the fix in sw.js's install handler correctly re-fetches the app shell fresh once
+    // an update *is* detected. registration.update() forces an immediate check on load instead
+    // of waiting for the browser's own timing.
+    navigator.serviceWorker
+      .register('sw.js', { updateViaCache: 'none' })
+      .then((reg) => reg.update())
+      .catch(() => { /* offline install still works without it */ });
   });
 }
