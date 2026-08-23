@@ -233,5 +233,8 @@ exportPdfBtn.addEventListener('click', () => {
   window.print();
 });
 
+const ownerName = localStorage.getItem('ownerName') || '';
+document.querySelector('h1').textContent = ownerName ? `${ownerName}'s Income` : 'Income';
+
 dateInput.value = todayStr();
 renderAll();

@@ -115,12 +115,26 @@ const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', 
 const categories = loadCategories();
 let targets = loadBudget();
 
+const ownerNameInput = document.getElementById('ownerName');
 const netIncomeInput = document.getElementById('netIncome');
 const groupsEl = document.getElementById('budgetGroups');
 const totalBudgetedEl = document.getElementById('totalBudgeted');
 const totalIncomeEl = document.getElementById('totalIncome');
 const actualIncomeEl = document.getElementById('actualIncome');
 const remainingEl = document.getElementById('remaining');
+
+// Shared across pages (Expenses/Income read it too) so the printed PDF header on each says
+// "<name>'s Budget/Expenses/Income" instead of a generic title. One input, here, is enough.
+function updateHeading() {
+  const name = ownerNameInput.value.trim();
+  document.querySelector('h1').textContent = name ? `${name}'s Budget` : 'Budget';
+}
+ownerNameInput.value = localStorage.getItem('ownerName') || '';
+updateHeading();
+ownerNameInput.addEventListener('input', () => {
+  localStorage.setItem('ownerName', ownerNameInput.value);
+  updateHeading();
+});
 
 netIncomeInput.value = loadNetIncome();
 

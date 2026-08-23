@@ -678,6 +678,9 @@ async function migrateExpenses() {
 
 // ---------- Init ----------
 
+const ownerName = localStorage.getItem('ownerName') || '';
+document.querySelector('h1').textContent = ownerName ? `${ownerName}'s Expenses` : 'Expenses';
+
 dateInput.value = todayStr();
 urgencyInput.value = '5';
 renderCategoryOptions();
