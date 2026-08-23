@@ -341,7 +341,7 @@ footer {
 @media print {
   @page { margin: 1cm; }
   body { background: #fff; color: #000; padding-bottom: 0; font-size: 11px; }
-  header nav, form, .categoryManager, footer, .hint { display: none !important; }
+  header nav, form, .categoryManager, footer, .hint, .noPrint { display: none !important; }
   header { position: static; border-bottom: 1px solid #000; padding: 0 0 0.3rem; }
   main { max-width: none; width: 100%; margin: 0; padding: 0; }
   h1 { font-size: 1.1rem; margin: 0 0 0.2rem; }
