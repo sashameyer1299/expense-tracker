@@ -187,4 +187,7 @@ dailyCostInput.addEventListener('input', () => {
   renderNetSection();
 });
 
+const ownerName = localStorage.getItem('ownerName') || '';
+document.querySelector('h1').textContent = ownerName ? `${ownerName}'s Health` : 'Health';
+
 renderAll();

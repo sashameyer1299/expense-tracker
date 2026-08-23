@@ -172,4 +172,7 @@ debtsListEl.addEventListener('click', async (ev) => {
   }
 });
 
+const ownerName = localStorage.getItem('ownerName') || '';
+document.querySelector('h1').textContent = ownerName ? `${ownerName}'s Debts` : 'Debts';
+
 renderAll();
