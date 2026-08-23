@@ -568,6 +568,103 @@ importFile.addEventListener('change', async (ev) => {
   renderAll();
 });
 
+// ---------- Full backup / restore (all pages: expenses, income, debts, budget, health) ----------
+
+async function getAllFromStore(storeName) {
+  const db = await dbPromise;
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(storeName, 'readonly');
+    const req = tx.objectStore(storeName).getAll();
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function clearStore(storeName) {
+  const db = await dbPromise;
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(storeName, 'readwrite');
+    tx.objectStore(storeName).clear();
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+async function addToStore(storeName, record) {
+  const db = await dbPromise;
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(storeName, 'readwrite');
+    tx.objectStore(storeName).add(record);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+const exportAllBtn = document.getElementById('exportAllBtn');
+const importAllFile = document.getElementById('importAllFile');
+
+exportAllBtn.addEventListener('click', async () => {
+  const payload = {
+    exportedAt: new Date().toISOString(),
+    localStorage: {
+      categories: JSON.parse(localStorage.getItem('categories') || 'null'),
+      budgetTargets: JSON.parse(localStorage.getItem('budgetTargets') || 'null'),
+      netIncome: localStorage.getItem('netIncome'),
+      smokeLog: JSON.parse(localStorage.getItem('smokeLog') || 'null'),
+      smokeDailyCost: localStorage.getItem('smokeDailyCost'),
+    },
+    expenses: await getAllExpenses(),
+    income: await getAllFromStore('income'),
+    debts: await getAllDebts(),
+  };
+  downloadFile(`full-backup-${todayStr()}.json`, JSON.stringify(payload, null, 2), 'application/json');
+});
+
+importAllFile.addEventListener('change', async (ev) => {
+  const file = ev.target.files[0];
+  if (!file) return;
+  const text = await file.text();
+  let payload;
+  try {
+    payload = JSON.parse(text);
+  } catch (e) {
+    alert('Not a valid JSON file.');
+    return;
+  }
+  if (!payload.localStorage || !Array.isArray(payload.expenses)) {
+    alert('This does not look like a full backup file.');
+    return;
+  }
+  if (!confirm('This replaces ALL data on this phone — Expenses, Income, Debts, Budget targets, Health log — with the backup file. Continue?')) return;
+
+  const ls = payload.localStorage;
+  if (ls.categories) localStorage.setItem('categories', JSON.stringify(ls.categories));
+  if (ls.budgetTargets) localStorage.setItem('budgetTargets', JSON.stringify(ls.budgetTargets));
+  if (ls.netIncome != null) localStorage.setItem('netIncome', String(ls.netIncome));
+  if (ls.smokeLog) localStorage.setItem('smokeLog', JSON.stringify(ls.smokeLog));
+  if (ls.smokeDailyCost != null) localStorage.setItem('smokeDailyCost', String(ls.smokeDailyCost));
+
+  await clearStore('expenses');
+  for (const e of payload.expenses) {
+    const { id, ...rest } = e;
+    await addToStore('expenses', rest);
+  }
+  await clearStore('income');
+  for (const e of payload.income || []) {
+    const { id, ...rest } = e;
+    await addToStore('income', rest);
+  }
+  await clearStore('debts');
+  for (const d of payload.debts || []) {
+    const { id, ...rest } = d;
+    await addToStore('debts', rest);
+  }
+
+  importAllFile.value = '';
+  alert('Restored. Reloading now.');
+  location.reload();
+});
+
 // ---------- One-time migration for expenses saved before urgency was split out ----------
 
 async function migrateExpenses() {

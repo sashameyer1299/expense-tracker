@@ -25,11 +25,15 @@ never leaves your phone; see **Data & privacy** below.
 - All expenses are stored in the phone browser's **IndexedDB** — local to that device only.
 - Categories are stored in **localStorage**, same device-only scope.
 - No network requests happen at runtime. No accounts, no login, no analytics.
-- **Backup:** use the **Export JSON** or **Export CSV** button in the footer to download a
-  snapshot. There is no automatic sync — back up manually whenever you want a copy elsewhere
-  (email it to yourself, save to a cloud drive, whatever you choose).
-- **Restore:** use **Import JSON** with a previously exported file. This replaces all data
-  currently on the device — it asks for confirmation first.
+- **Backup:** each page has its own Export JSON/CSV for that page's data. For everything at
+  once — Expenses, Income, Debts, Budget targets, and the Health log in one file — use
+  **Backup everything** under the "Full backup" section on the Expenses page. There is no
+  automatic sync — back up manually whenever you want a copy elsewhere (email it to yourself,
+  save to a cloud drive, whatever you choose). Do this before clearing your browser's site data
+  for this app, since that wipes everything.
+- **Restore:** per-page Import JSON restores just that page's data; **Restore everything**
+  (same "Full backup" section) restores all of it from a full-backup file. Both ask for
+  confirmation first since they replace existing data.
 - Clearing the browser's site data for this app (or uninstalling it) deletes the data with it.
   Export before doing that if you want to keep it.
 

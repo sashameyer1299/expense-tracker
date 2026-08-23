@@ -85,6 +85,21 @@
     </div>
   </details>
 
+  <details class="categoryManager">
+    <summary>Full backup (all pages)</summary>
+    <p class="hint">
+      Covers everything — Expenses, Income, Debts, Budget targets, and the Health log — in one
+      file. Use this before clearing your browser's site data for this app.
+    </p>
+    <div class="formActions">
+      <button type="button" id="exportAllBtn">Backup everything</button>
+    </div>
+    <label class="importLabel">
+      Restore everything
+      <input type="file" id="importAllFile" accept="application/json" hidden>
+    </label>
+  </details>
+
   <section id="summary">
     <h2>This month by category</h2>
     <ul id="categorySummary" class="categorySummary"></ul>

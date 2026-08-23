@@ -320,6 +320,9 @@ footer {
   background: var(--surface);
   border-top: 1px solid var(--border);
 }
+.categoryManager .importLabel { margin-top: 0.5rem; }
+.categoryManager .formActions { margin-bottom: 0; }
+
 .importLabel {
   flex: 1;
   min-height: 44px;
