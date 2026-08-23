@@ -187,4 +187,8 @@ netIncomeInput.addEventListener('input', () => {
   updateTotals();
 });
 
+document.getElementById('exportPdfBtn').addEventListener('click', () => {
+  window.print();
+});
+
 render();
