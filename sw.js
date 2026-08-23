@@ -1,6 +1,6 @@
 // Cache-first service worker for the app shell — makes the PWA work fully offline after first load.
 
-const CACHE_NAME = 'expense-tracker-v14';
+const CACHE_NAME = 'expense-tracker-v15';
 const APP_SHELL = [
   './', './index.html', './style.css', './app.js', './manifest.json',
   './icon.svg', './icon-192.png', './icon-512.png',
@@ -33,6 +33,10 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
   event.respondWith(
-    caches.match(event.request).then((cached) => cached || fetch(event.request))
+    // Fetching by URL string (not the original Request object) avoids a real Chrome gotcha:
+    // a navigation request has mode:'navigate', and re-fetching that exact Request object
+    // fails outright (ERR_FAILED) rather than falling through to network. This bit any page
+    // not already in an older cached version when opened by direct navigation.
+    caches.match(event.request).then((cached) => cached || fetch(event.request.url))
   );
 });
