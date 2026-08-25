@@ -36,6 +36,25 @@ async function getAllIncome() {
   });
 }
 
+async function putIncome(entry) {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('income', 'readwrite');
+    tx.objectStore('income').put(entry);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+function toSupabaseIncome(e) {
+  return { id: e.id, date: e.date, source: e.source, amount: e.amount, note: e.note || '', updated_at: e.updatedAt };
+}
+function fromSupabaseIncome(r) {
+  return { id: r.id, date: r.date, source: r.source, amount: r.amount, note: r.note || '', updatedAt: r.updated_at };
+}
+async function syncIncomeForBudget() {
+  await syncStore('income', { getAllLocal: getAllIncome, putLocal: (r) => putIncome(fromSupabaseIncome(r)), toRemote: toSupabaseIncome });
+}
+
 const todayStr = () => new Date().toISOString().slice(0, 10);
 
 // "This month" runs on the actual pay cycle (25th to 24th) — payday is the 25th.
@@ -109,6 +128,7 @@ function loadBudget() {
 
 function saveBudget(targets) {
   localStorage.setItem('budgetTargets', JSON.stringify(targets));
+  supabasePushSettings({ budget_targets: targets });
 }
 
 function loadNetIncome() {
@@ -118,12 +138,13 @@ function loadNetIncome() {
 
 function saveNetIncome(value) {
   localStorage.setItem('netIncome', String(value));
+  supabasePushSettings({ net_income: parseFloat(value) || 0 });
 }
 
 const money = (n) => `N$${(isNaN(n) ? 0 : n).toFixed(2)}`;
 const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-const categories = loadCategories();
+let categories = loadCategories();
 let targets = loadBudget();
 
 const ownerNameInput = document.getElementById('ownerName');
@@ -144,8 +165,29 @@ ownerNameInput.value = localStorage.getItem('ownerName') || '';
 updateHeading();
 ownerNameInput.addEventListener('input', () => {
   localStorage.setItem('ownerName', ownerNameInput.value);
+  supabasePushSettings({ owner_name: ownerNameInput.value });
   updateHeading();
 });
+
+// Pulls the whole shared settings row and applies every field — categories and the
+// quit-smoking log are owned by other pages, but this device's copy needs to stay current
+// regardless of which page was last used elsewhere.
+async function syncSettings() {
+  const remote = await supabasePullSettings();
+  if (!remote) return;
+  if (remote.categories) localStorage.setItem('categories', JSON.stringify(remote.categories));
+  if (remote.owner_name != null) localStorage.setItem('ownerName', remote.owner_name);
+  if (remote.net_income != null) localStorage.setItem('netIncome', String(remote.net_income));
+  if (remote.budget_targets) localStorage.setItem('budgetTargets', JSON.stringify(remote.budget_targets));
+  if (remote.smoke_daily_cost != null) localStorage.setItem('smokeDailyCost', String(remote.smoke_daily_cost));
+  if (remote.smoke_log) localStorage.setItem('smokeLog', JSON.stringify(remote.smoke_log));
+
+  categories = loadCategories();
+  targets = loadBudget();
+  ownerNameInput.value = localStorage.getItem('ownerName') || '';
+  updateHeading();
+  netIncomeInput.value = loadNetIncome();
+}
 
 netIncomeInput.value = loadNetIncome();
 
@@ -216,4 +258,9 @@ document.getElementById('exportPdfBtn').addEventListener('click', () => {
   window.print();
 });
 
-render();
+async function syncAndRender() {
+  await Promise.all([syncSettings(), syncIncomeForBudget()]);
+  render();
+}
+syncAndRender();
+scheduleFocusSync(syncAndRender);

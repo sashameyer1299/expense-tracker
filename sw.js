@@ -1,6 +1,6 @@
 // Cache-first service worker for the app shell — makes the PWA work fully offline after first load.
 
-const CACHE_NAME = 'expense-tracker-v20';
+const CACHE_NAME = 'expense-tracker-v21';
 const APP_SHELL = [
   './', './index.html', './style.css', './app.js', './manifest.json',
   './icon.svg', './icon-192.png', './icon-512.png',
@@ -9,7 +9,7 @@ const APP_SHELL = [
   './income.html', './income.js',
   './debts.html', './debts.js',
   './overview.html', './overview.js',
-  './nav-swipe.js',
+  './nav-swipe.js', './supabase-sync.js',
 ];
 
 self.addEventListener('install', (event) => {

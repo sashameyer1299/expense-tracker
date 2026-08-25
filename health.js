@@ -36,6 +36,31 @@ async function getAllExpenses() {
   });
 }
 
+async function putExpense(expense) {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('expenses', 'readwrite');
+    tx.objectStore('expenses').put(expense);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+function toSupabaseExpense(e) {
+  return {
+    id: e.id, date: e.date, category: e.category, urgency: e.urgency, amount: e.amount,
+    note: e.note || '', unexpected: Boolean(e.unexpected), debt_id: e.debtId || null, updated_at: e.updatedAt,
+  };
+}
+function fromSupabaseExpense(r) {
+  return {
+    id: r.id, date: r.date, category: r.category, urgency: r.urgency, amount: r.amount,
+    note: r.note || '', unexpected: Boolean(r.unexpected), debtId: r.debt_id || null, updatedAt: r.updated_at,
+  };
+}
+async function syncExpensesForHealth() {
+  await syncStore('expenses', { getAllLocal: getAllExpenses, putLocal: (r) => putExpense(fromSupabaseExpense(r)), toRemote: toSupabaseExpense });
+}
+
 const money = (n) => `N$${(isNaN(n) ? 0 : n).toFixed(2)}`;
 const todayStr = () => new Date().toISOString().slice(0, 10);
 
@@ -67,6 +92,7 @@ function loadSmokeLog() {
 }
 function saveSmokeLog(log) {
   localStorage.setItem('smokeLog', JSON.stringify(log));
+  supabasePushSettings({ smoke_log: log });
 }
 function loadDailyCost() {
   const raw = localStorage.getItem('smokeDailyCost');
@@ -74,6 +100,7 @@ function loadDailyCost() {
 }
 function saveDailyCost(value) {
   localStorage.setItem('smokeDailyCost', String(value));
+  supabasePushSettings({ smoke_daily_cost: parseFloat(value) || 0 });
 }
 
 let smokeLog = loadSmokeLog();
@@ -201,7 +228,22 @@ dailyCostInput.addEventListener('input', () => {
   renderNetSection();
 });
 
-const ownerName = localStorage.getItem('ownerName') || '';
-document.querySelector('h1').textContent = ownerName ? `${ownerName}'s Health` : 'Health';
+async function syncSettings() {
+  const remote = await supabasePullSettings();
+  if (remote) {
+    if (remote.owner_name != null) localStorage.setItem('ownerName', remote.owner_name);
+    if (remote.smoke_daily_cost != null) localStorage.setItem('smokeDailyCost', String(remote.smoke_daily_cost));
+    if (remote.smoke_log) localStorage.setItem('smokeLog', JSON.stringify(remote.smoke_log));
+    smokeLog = loadSmokeLog();
+    dailyCostInput.value = loadDailyCost();
+  }
+  const ownerName = localStorage.getItem('ownerName') || '';
+  document.querySelector('h1').textContent = ownerName ? `${ownerName}'s Health` : 'Health';
+}
 
-renderAll();
+async function syncAndRender() {
+  await Promise.all([syncSettings(), syncExpensesForHealth()]);
+  renderAll();
+}
+syncAndRender();
+scheduleFocusSync(syncAndRender);

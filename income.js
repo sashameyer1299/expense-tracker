@@ -91,6 +91,40 @@ function monthLabel(key) {
 }
 const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
+function toSupabaseIncome(e) {
+  return { id: e.id, date: e.date, source: e.source, amount: e.amount, note: e.note || '', updated_at: e.updatedAt };
+}
+function fromSupabaseIncome(r) {
+  return { id: r.id, date: r.date, source: r.source, amount: r.amount, note: r.note || '', updatedAt: r.updated_at };
+}
+async function syncIncome() {
+  await syncStore('income', { getAllLocal: getAllIncome, putLocal: (r) => putIncome(fromSupabaseIncome(r)), toRemote: toSupabaseIncome });
+}
+async function migrateIncome() {
+  const entries = await getAllIncome();
+  for (const e of entries) {
+    const needsIdFix = typeof e.id === 'number';
+    if (!needsIdFix && e.updatedAt) continue;
+    const updated = { ...e, updatedAt: e.updatedAt || new Date().toISOString() };
+    if (needsIdFix) {
+      const oldId = e.id;
+      updated.id = crypto.randomUUID();
+      await deleteIncome(oldId);
+      await addIncome(updated);
+    } else {
+      await putIncome(updated);
+    }
+  }
+}
+// Income doesn't own any settings fields but still applies whatever's shared (categories
+// aren't used here, but ownerName personalizes this page's heading too).
+async function applySharedOwnerName() {
+  const remote = await supabasePullSettings();
+  if (remote && remote.owner_name != null) localStorage.setItem('ownerName', remote.owner_name);
+  const ownerName = localStorage.getItem('ownerName') || '';
+  document.querySelector('h1').textContent = ownerName ? `${ownerName}'s Income` : 'Income';
+}
+
 const form = document.getElementById('incomeForm');
 const editIdInput = document.getElementById('editId');
 const dateInput = document.getElementById('date');
@@ -107,7 +141,7 @@ const exportPdfBtn = document.getElementById('exportPdfBtn');
 
 async function renderAll() {
   const entries = await getAllIncome();
-  entries.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : b.id - a.id));
+  entries.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : (b.updatedAt || '').localeCompare(a.updatedAt || '')));
 
   renderMonthSummary(entries);
   renderHistory(entries);
@@ -176,13 +210,16 @@ form.addEventListener('submit', async (ev) => {
     note: noteInput.value.trim(),
   };
   if (!entry.date || isNaN(entry.amount) || entry.amount < 0 || !entry.source) return;
+  entry.updatedAt = new Date().toISOString();
 
   if (editIdInput.value) {
-    entry.id = Number(editIdInput.value);
+    entry.id = editIdInput.value;
     await putIncome(entry);
   } else {
+    entry.id = crypto.randomUUID();
     await addIncome(entry);
   }
+  supabasePush('income', toSupabaseIncome(entry));
   resetForm();
   renderAll();
 });
@@ -194,11 +231,11 @@ incomeGroupsEl.addEventListener('click', async (ev) => {
   const delBtn = ev.target.closest('.deleteBtn');
 
   if (editBtn) {
-    const id = Number(editBtn.dataset.id);
+    const id = editBtn.dataset.id;
     const entries = await getAllIncome();
     const entry = entries.find((e) => e.id === id);
     if (!entry) return;
-    editIdInput.value = String(id);
+    editIdInput.value = id;
     dateInput.value = entry.date;
     amountInput.value = entry.amount;
     sourceInput.value = entry.source;
@@ -209,9 +246,10 @@ incomeGroupsEl.addEventListener('click', async (ev) => {
   }
 
   if (delBtn) {
-    const id = Number(delBtn.dataset.id);
+    const id = delBtn.dataset.id;
     if (confirm('Delete this income entry?')) {
       await deleteIncome(id);
+      supabaseDelete('income', id);
       renderAll();
     }
   }
@@ -247,8 +285,12 @@ exportPdfBtn.addEventListener('click', () => {
   window.print();
 });
 
-const ownerName = localStorage.getItem('ownerName') || '';
-document.querySelector('h1').textContent = ownerName ? `${ownerName}'s Income` : 'Income';
-
 dateInput.value = todayStr();
-renderAll();
+
+async function syncAndRender() {
+  await migrateIncome();
+  await Promise.all([syncIncome(), applySharedOwnerName()]);
+  renderAll();
+}
+syncAndRender();
+scheduleFocusSync(syncAndRender);

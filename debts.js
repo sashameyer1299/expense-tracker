@@ -72,6 +72,32 @@ async function getAllDebts() {
 const money = (n) => `N$${(isNaN(n) ? 0 : n).toFixed(2)}`;
 const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
+function toSupabaseDebt(d) {
+  return { id: d.id, name: d.name, balance: d.balance, monthly_payment: d.monthlyPayment || 0, note: d.note || '', updated_at: d.updatedAt };
+}
+function fromSupabaseDebt(r) {
+  return { id: r.id, name: r.name, balance: r.balance, monthlyPayment: r.monthly_payment || 0, note: r.note || '', updatedAt: r.updated_at };
+}
+async function syncDebts() {
+  await syncStore('debts', { getAllLocal: getAllDebts, putLocal: (r) => putDebt(fromSupabaseDebt(r)), toRemote: toSupabaseDebt });
+}
+async function migrateDebts() {
+  const debts = await getAllDebts();
+  for (const d of debts) {
+    const needsIdFix = typeof d.id === 'number';
+    if (!needsIdFix && d.updatedAt) continue;
+    const updated = { ...d, updatedAt: d.updatedAt || new Date().toISOString() };
+    if (needsIdFix) {
+      const oldId = d.id;
+      updated.id = crypto.randomUUID();
+      await deleteDebt(oldId);
+      await addDebt(updated);
+    } else {
+      await putDebt(updated);
+    }
+  }
+}
+
 const form = document.getElementById('debtForm');
 const editIdInput = document.getElementById('editId');
 const nameInput = document.getElementById('name');
@@ -131,13 +157,16 @@ form.addEventListener('submit', async (ev) => {
     note: noteInput.value.trim(),
   };
   if (!debt.name || isNaN(debt.balance) || debt.balance < 0) return;
+  debt.updatedAt = new Date().toISOString();
 
   if (editIdInput.value) {
-    debt.id = Number(editIdInput.value);
+    debt.id = editIdInput.value;
     await putDebt(debt);
   } else {
+    debt.id = crypto.randomUUID();
     await addDebt(debt);
   }
+  supabasePush('debts', toSupabaseDebt(debt));
   resetForm();
   renderAll();
 });
@@ -149,11 +178,11 @@ debtsListEl.addEventListener('click', async (ev) => {
   const delBtn = ev.target.closest('.deleteBtn');
 
   if (editBtn) {
-    const id = Number(editBtn.dataset.id);
+    const id = editBtn.dataset.id;
     const debts = await getAllDebts();
     const debt = debts.find((d) => d.id === id);
     if (!debt) return;
-    editIdInput.value = String(id);
+    editIdInput.value = id;
     nameInput.value = debt.name;
     balanceInput.value = debt.balance;
     paymentInput.value = debt.monthlyPayment || '';
@@ -164,9 +193,10 @@ debtsListEl.addEventListener('click', async (ev) => {
   }
 
   if (delBtn) {
-    const id = Number(delBtn.dataset.id);
+    const id = delBtn.dataset.id;
     if (confirm('Delete this debt? Expenses already linked to it keep their own record but will no longer show a live balance.')) {
       await deleteDebt(id);
+      supabaseDelete('debts', id);
       renderAll();
     }
   }
@@ -175,4 +205,5 @@ debtsListEl.addEventListener('click', async (ev) => {
 const ownerName = localStorage.getItem('ownerName') || '';
 document.querySelector('h1').textContent = ownerName ? `${ownerName}'s Debts` : 'Debts';
 
-renderAll();
+migrateDebts().then(() => syncDebts().then(renderAll));
+scheduleFocusSync(() => syncDebts().then(renderAll));

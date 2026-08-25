@@ -1,7 +1,9 @@
 # Expense Tracker
 
 Phone-first expense tracker. Installable as an app on your phone's home screen, works fully
-offline, and every number you enter stays on that phone — nothing is sent anywhere, ever.
+offline, and syncs between two phones via a Supabase project you control — no third-party
+service sees your data beyond that project, and the app works with zero network at all if you'd
+rather not set sync up. See **Sync between two phones** below.
 
 ## Install on your phone
 
@@ -22,9 +24,12 @@ never leaves your phone; see **Data & privacy** below.
 
 ## Data & privacy
 
-- All expenses are stored in the phone browser's **IndexedDB** — local to that device only.
-- Categories are stored in **localStorage**, same device-only scope.
-- No network requests happen at runtime. No accounts, no login, no analytics.
+- All expenses are stored in the phone browser's **IndexedDB** first — local to that device,
+  works with zero network.
+- Categories/budget/health-log settings are stored in **localStorage**, same device-first model.
+- Sync to Supabase (see below) is best-effort on top of that — every sync call silently no-ops
+  when offline, so the app never depends on network to keep working. No accounts, no login, no
+  analytics; sync uses a single publishable API key, not a personal account.
 - **Backup:** each page has its own Export JSON/CSV for that page's data. For everything at
   once — Expenses, Income, Debts, Budget targets, and the Health log in one file — use
   **Backup everything** under the "Full backup" section on the Expenses page. There is no
@@ -36,6 +41,32 @@ never leaves your phone; see **Data & privacy** below.
   confirmation first since they replace existing data.
 - Clearing the browser's site data for this app (or uninstalling it) deletes the data with it.
   Export before doing that if you want to keep it.
+
+## Sync between two phones
+
+The app syncs to a Supabase project (free tier — 500MB DB, 5GB bandwidth/month, well within a
+two-person household's usage) via plain `fetch()` calls against Supabase's REST API — no
+`supabase-js` library, no CDN, keeping this repo's zero-dependency rule intact.
+
+**One-time setup**, if setting this up fresh:
+1. Create a free Supabase project at supabase.com.
+2. Dashboard → SQL Editor → New query → paste the contents of `supabase/schema.sql` → Run.
+   Creates four tables (`expenses`, `income`, `debts`, `settings`) with permissive RLS policies
+   — this project is dedicated to one household's data, so there's no multi-tenant boundary to
+   enforce; the policies just let anyone holding the key read/write.
+3. Dashboard → Settings → API → copy the **Project URL** and the **publishable/anon key**.
+4. Put both into `SUPABASE_URL`/`SUPABASE_KEY` at the top of `supabase-sync.js`.
+
+**How it works:** every page pulls from Supabase on load and again when the tab regains focus
+(no realtime/websocket connection — polling on focus is simpler and dependency-free, proportionate
+for a household budget app). Every local write pushes up immediately. Conflicts resolve
+last-write-wins per record via an `updated_at` timestamp — fine for two people, not built for a
+team. Two phones sharing the same Supabase URL/key are effectively the same household account;
+there's no per-device or per-person login.
+
+**No sync desired?** Leave `SUPABASE_URL`/`SUPABASE_KEY` as placeholder values or point them at
+nothing — every sync call fails silently and the app runs exactly as it did before this was
+added, fully local, no network.
 
 ## Pay cycle, not calendar month
 
@@ -92,6 +123,8 @@ the offline/install behaviour.
 | `debts.js` | Debts page logic: IndexedDB CRUD for the `debts` store |
 | `overview.js` | Overview page logic — reads all three IndexedDB stores plus localStorage settings, read-only |
 | `nav-swipe.js` | Shared: swipe left/right to move between pages (Overview → Expenses → Budget → Health → Income → Debts) |
+| `supabase-sync.js` | Shared: two-device sync transport (plain `fetch()` against Supabase's REST API) |
+| `supabase/schema.sql` | Run once in Supabase's SQL Editor — creates the 4 tables + RLS policies |
 | `manifest.json` | PWA metadata (name, icon, install behaviour) |
 | `sw.js` | Service worker — caches the app shell for offline use |
 | `icon.svg` / `icon-192.png` / `icon-512.png` | App icon |

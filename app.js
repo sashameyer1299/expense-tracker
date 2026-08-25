@@ -107,25 +107,68 @@ async function getAllDebts() {
   });
 }
 
+// Full-record upsert for debts — app.js only otherwise touches debts via adjustDebtBalance(),
+// but needs this to apply incoming records when syncing (the "Debt payment" dropdown should
+// reflect current balances even if this device never opens the Debts page directly).
+async function putDebt(debt) {
+  const db = await dbPromise;
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('debts', 'readwrite');
+    tx.objectStore('debts').put(debt);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+function fromSupabaseDebt(r) {
+  return { id: r.id, name: r.name, balance: r.balance, monthlyPayment: r.monthly_payment || 0, note: r.note || '', updatedAt: r.updated_at };
+}
+
 // delta is added to the debt's balance — pass a negative amount to apply a payment, a positive
 // amount to reverse one (e.g. when a linked expense is edited or deleted).
 async function adjustDebtBalance(debtId, delta) {
   if (!debtId) return;
   const db = await dbPromise;
-  return new Promise((resolve, reject) => {
+  let updatedDebt = null;
+  await new Promise((resolve, reject) => {
     const tx = db.transaction('debts', 'readwrite');
     const store = tx.objectStore('debts');
-    const req = store.get(Number(debtId));
+    const req = store.get(debtId);
     req.onsuccess = () => {
       const debt = req.result;
       if (debt) {
         debt.balance += delta;
+        debt.updatedAt = new Date().toISOString();
         store.put(debt);
+        updatedDebt = debt;
       }
     };
     tx.oncomplete = () => resolve();
     tx.onerror = () => reject(tx.error);
   });
+  if (updatedDebt) supabasePush('debts', toSupabaseDebt(updatedDebt));
+}
+
+// ---------- Supabase field mapping (camelCase locally, snake_case in Postgres) ----------
+
+function toSupabaseExpense(e) {
+  return {
+    id: e.id, date: e.date, category: e.category, urgency: e.urgency, amount: e.amount,
+    note: e.note || '', unexpected: Boolean(e.unexpected), debt_id: e.debtId || null,
+    updated_at: e.updatedAt,
+  };
+}
+function fromSupabaseExpense(r) {
+  return {
+    id: r.id, date: r.date, category: r.category, urgency: r.urgency, amount: r.amount,
+    note: r.note || '', unexpected: Boolean(r.unexpected), debtId: r.debt_id || null,
+    updatedAt: r.updated_at,
+  };
+}
+function toSupabaseDebt(d) {
+  return {
+    id: d.id, name: d.name, balance: d.balance, monthly_payment: d.monthlyPayment || 0,
+    note: d.note || '', updated_at: d.updatedAt,
+  };
 }
 
 // ---------- Categories (localStorage) ----------
@@ -160,6 +203,7 @@ function loadCategories() {
 
 function saveCategories(list) {
   localStorage.setItem('categories', JSON.stringify(list));
+  supabasePushSettings({ categories: list });
 }
 
 let categories = loadCategories();
@@ -252,6 +296,27 @@ function findCategory(name) {
   return categories.find((c) => c.name.toLowerCase() === lower);
 }
 
+// Pulls the whole shared settings row and applies every field to localStorage — other pages
+// (Budget, Health) own most of these fields, but this device's copy needs to stay current
+// regardless of which page was last used to edit them. app.js only re-renders the bits it
+// displays (categories); it doesn't need to react to budget/health fields itself.
+async function syncSettings() {
+  const remote = await supabasePullSettings();
+  if (!remote) return;
+  if (remote.categories) localStorage.setItem('categories', JSON.stringify(remote.categories));
+  if (remote.owner_name != null) localStorage.setItem('ownerName', remote.owner_name);
+  if (remote.net_income != null) localStorage.setItem('netIncome', String(remote.net_income));
+  if (remote.budget_targets) localStorage.setItem('budgetTargets', JSON.stringify(remote.budget_targets));
+  if (remote.smoke_daily_cost != null) localStorage.setItem('smokeDailyCost', String(remote.smoke_daily_cost));
+  if (remote.smoke_log) localStorage.setItem('smokeLog', JSON.stringify(remote.smoke_log));
+
+  categories = loadCategories();
+  renderCategoryOptions();
+  renderCategoryManager();
+  const ownerName = localStorage.getItem('ownerName') || '';
+  document.querySelector('h1').textContent = ownerName ? `${ownerName}'s Expenses` : 'Expenses';
+}
+
 // Autofill urgency when the typed category matches a known one — still a real selector,
 // just pre-set for convenience; the user can override it before submitting.
 categoryInput.addEventListener('input', () => {
@@ -265,7 +330,7 @@ function escapeHtml(s) {
 
 async function renderAll() {
   const expenses = await getAllExpenses();
-  expenses.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : b.id - a.id));
+  expenses.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : (b.updatedAt || '').localeCompare(a.updatedAt || '')));
 
   renderMonthSummary(expenses);
   renderUnexpectedSummary(expenses);
@@ -394,14 +459,19 @@ form.addEventListener('submit', async (ev) => {
     await adjustDebtBalance(originalExpense.debtId, originalExpense.amount);
   }
 
+  expense.updatedAt = new Date().toISOString();
+
   if (editIdInput.value) {
-    expense.id = Number(editIdInput.value);
+    expense.id = editIdInput.value;
     await putExpense(expense);
   } else {
+    expense.id = crypto.randomUUID();
     await addExpense(expense);
   }
 
   if (debtId) await adjustDebtBalance(debtId, -expense.amount);
+
+  supabasePush('expenses', toSupabaseExpense(expense));
 
   resetForm();
   renderAll();
@@ -415,11 +485,11 @@ expenseGroupsEl.addEventListener('click', async (ev) => {
   const delBtn = ev.target.closest('.deleteBtn');
 
   if (editBtn) {
-    const id = Number(editBtn.dataset.id);
+    const id = editBtn.dataset.id;
     const expenses = await getAllExpenses();
     const expense = expenses.find((e) => e.id === id);
     if (!expense) return;
-    editIdInput.value = String(id);
+    editIdInput.value = id;
     dateInput.value = expense.date;
     amountInput.value = expense.amount;
     categoryInput.value = expense.category;
@@ -434,12 +504,13 @@ expenseGroupsEl.addEventListener('click', async (ev) => {
   }
 
   if (delBtn) {
-    const id = Number(delBtn.dataset.id);
+    const id = delBtn.dataset.id;
     if (confirm('Delete this expense?')) {
       const expenses = await getAllExpenses();
       const expense = expenses.find((e) => e.id === id);
       if (expense && expense.debtId) await adjustDebtBalance(expense.debtId, expense.amount);
       await deleteExpense(id);
+      supabaseDelete('expenses', id);
       renderAll();
       renderDebtOptions();
     }
@@ -685,10 +756,41 @@ importAllFile.addEventListener('change', async (ev) => {
 async function migrateExpenses() {
   const expenses = await getAllExpenses();
   for (const e of expenses) {
-    if (e.urgency) continue; // already migrated / already has urgency
-    const normalized = normalizeCategory(e.category);
-    await putExpense({ ...e, category: normalized.name, urgency: normalized.urgency });
+    const needsCategoryFix = !e.urgency;
+    const needsIdFix = typeof e.id === 'number'; // pre-sync records used IndexedDB autoIncrement
+    if (!needsCategoryFix && !needsIdFix && e.updatedAt) continue;
+
+    const normalized = needsCategoryFix ? normalizeCategory(e.category) : { name: e.category, urgency: e.urgency };
+    const updated = { ...e, category: normalized.name, urgency: normalized.urgency, updatedAt: e.updatedAt || new Date().toISOString() };
+
+    if (needsIdFix) {
+      // Two devices synced via Supabase can't share autoIncrement integers — every record
+      // needs a globally-unique id. Can't change an IndexedDB record's key in place, so
+      // delete the old numeric-id record and add a fresh one with a UUID.
+      const oldId = e.id;
+      updated.id = crypto.randomUUID();
+      await deleteExpense(oldId);
+      await addExpense(updated);
+    } else {
+      await putExpense(updated);
+    }
   }
+}
+
+async function syncExpenses() {
+  await syncStore('expenses', {
+    getAllLocal: getAllExpenses,
+    putLocal: (r) => putExpense(fromSupabaseExpense(r)),
+    toRemote: toSupabaseExpense,
+  });
+}
+
+async function syncDebtsForExpenses() {
+  await syncStore('debts', {
+    getAllLocal: getAllDebts,
+    putLocal: (r) => putDebt(fromSupabaseDebt(r)),
+    toRemote: toSupabaseDebt,
+  });
 }
 
 // ---------- Init ----------
@@ -700,7 +802,14 @@ dateInput.value = todayStr();
 urgencyInput.value = '5';
 renderCategoryOptions();
 renderCategoryManager();
-renderDebtOptions().then(() => migrateExpenses().then(renderAll));
+async function syncAndRender() {
+  await migrateExpenses();
+  await Promise.all([syncExpenses(), syncDebtsForExpenses(), syncSettings()]);
+  await renderDebtOptions();
+  renderAll();
+}
+syncAndRender();
+scheduleFocusSync(syncAndRender);
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
