@@ -2,7 +2,7 @@
   "name": "Expense Tracker",
   "short_name": "Expenses",
   "description": "Phone-first offline expense tracker. All data stays on this device.",
-  "start_url": "./overview.html",
+  "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "background_color": "#0f1115",

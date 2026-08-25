@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0f1115">
-<title>Expenses</title>
+<title>Overview</title>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -12,118 +12,46 @@
 </head>
 <body>
 <header>
-  <h1>Expenses</h1>
+  <h1>Overview</h1>
   <nav class="pageNav">
-    <a class="navLink" href="overview.html">Overview</a>
-    <span class="navActive">Expenses</span>
+    <span class="navActive">Overview</span>
+    <a class="navLink" href="expenses.html">Expenses</a>
     <a class="navLink" href="budget.html">Budget</a>
     <a class="navLink" href="health.html">Health</a>
     <a class="navLink" href="income.html">Income</a>
     <a class="navLink" href="debts.html">Debts</a>
   </nav>
-  <div id="monthSummary" class="monthSummary"></div>
-  <div id="unexpectedSummary" class="unexpectedSummary"></div>
+  <div id="periodBanner" class="monthSummary"></div>
 </header>
 
 <main>
-  <form id="expenseForm">
-    <input type="hidden" id="editId">
-    <div class="field">
-      <label for="date">Date</label>
-      <input type="date" id="date" required>
-    </div>
-    <div class="field">
-      <label for="amount">Amount (N$)</label>
-      <input type="number" id="amount" step="0.01" min="0" inputmode="decimal" required>
-    </div>
-    <div class="field">
-      <label for="category">Category</label>
-      <input type="text" id="category" list="categoryOptions" required placeholder="e.g. Rent">
-      <datalist id="categoryOptions"></datalist>
-    </div>
-    <div class="field">
-      <label for="urgency">Urgency</label>
-      <select id="urgency" required>
-        <option value="1">1 — Household floor</option>
-        <option value="2">2 — Health</option>
-        <option value="3">3 — Track 1 setup</option>
-        <option value="4">4 — Homelab / tooling (gated)</option>
-        <option value="5">5 — Everything else</option>
-      </select>
-    </div>
-    <div class="field">
-      <label for="note">Note (optional)</label>
-      <input type="text" id="note" placeholder="e.g. taxi to site">
-    </div>
-    <div class="field">
-      <label for="debtLink">Debt payment (optional)</label>
-      <select id="debtLink">
-        <option value="">— None —</option>
-      </select>
-    </div>
-    <div class="field checkboxField">
-      <label for="unexpected"><input type="checkbox" id="unexpected"> Unexpected expense</label>
-    </div>
-    <div class="formActions">
-      <button type="submit" id="submitBtn">Add expense</button>
-      <button type="button" id="cancelEditBtn" hidden>Cancel</button>
-    </div>
-  </form>
-
-  <details class="categoryManager">
-    <summary>Manage categories</summary>
-    <ul id="categoryList" class="categoryList"></ul>
-    <div class="field inline">
-      <input type="text" id="newCategory" placeholder="New category name">
-      <select id="newCategoryUrgency">
-        <option value="1">1</option>
-        <option value="2">2</option>
-        <option value="3">3</option>
-        <option value="4">4</option>
-        <option value="5" selected>5</option>
-      </select>
-      <button type="button" id="addCategoryBtn">Add</button>
-    </div>
-  </details>
-
-  <details class="categoryManager">
-    <summary>Full backup (all pages)</summary>
-    <p class="hint">
-      Covers everything — Expenses, Income, Debts, Budget targets, and the Health log — in one
-      file. Use this before clearing your browser's site data for this app.
-    </p>
-    <div class="formActions">
-      <button type="button" id="exportAllBtn">Backup everything</button>
-    </div>
-    <label class="importLabel">
-      Restore everything
-      <input type="file" id="importAllFile" accept="application/json" hidden>
-    </label>
-  </details>
-
-  <section id="summary">
-    <h2>This month by category</h2>
-    <ul id="categorySummary" class="categorySummary"></ul>
+  <section class="netSection">
+    <h2>Income this pay period</h2>
+    <div class="totalRow"><span>Actual logged</span><span id="actualIncome">N$0.00</span></div>
+    <div class="totalRow"><span>Net income (assumed)</span><span id="assumedIncome">N$0.00</span></div>
   </section>
 
-  <section id="history">
-    <h2>History</h2>
-    <div id="expenseGroups"></div>
+  <section class="netSection">
+    <h2>Spending this pay period</h2>
+    <div class="totalRow"><span>Actual spent</span><span id="actualSpent">N$0.00</span></div>
+    <div class="totalRow"><span>Total budgeted</span><span id="totalBudgeted">N$0.00</span></div>
+    <div class="totalRow remaining"><span>Budget headroom</span><span id="budgetHeadroom">N$0.00</span></div>
+  </section>
+
+  <section class="netSection">
+    <h2>Real cash position this pay period</h2>
+    <div class="totalRow remaining"><span>Actual income − actual spent</span><span id="netCash">N$0.00</span></div>
+  </section>
+
+  <section class="netSection">
+    <h2>Debt</h2>
+    <div class="totalRow"><span>Total owed</span><span id="totalDebt">N$0.00</span></div>
+    <div class="totalRow"><span>Across</span><span id="debtCount">0 debts</span></div>
   </section>
 </main>
 
-<footer>
-  <button type="button" id="exportJsonBtn">Export JSON</button>
-  <button type="button" id="exportCsvBtn">Export CSV</button>
-  <button type="button" id="exportPdfBtn">Export PDF</button>
-  <label class="importLabel">
-    Import JSON
-    <input type="file" id="importFile" accept="application/json" hidden>
-  </label>
-</footer>
-
 <script src="supabase-sync.js" defer></script>
 <script src="nav-swipe.js" defer></script>
-<script src="app.js" defer></script>
+<script src="overview.js" defer></script>
 </body>
 </html>

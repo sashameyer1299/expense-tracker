@@ -17,11 +17,17 @@ Six pages, each a self-contained HTML+JS pair, no shared modules (no build step,
 duplication across files — e.g. `openDB()`, the pay-cycle `monthKey`/`monthLabel` — is
 intentional, not an oversight):
 
-- **Overview** (`overview.html`/`overview.js`) — the landing page (`manifest.json` start_url).
-  Read-only summary of the current pay period: income vs. assumed, spend vs. budgeted, real
-  cash position, total debt. Pulls from all three IndexedDB stores plus localStorage; doesn't
-  own any data itself.
-- **Expenses** (`index.html`/`app.js`) — the expense log, including the "unexpected" flag.
+- **Overview** (`index.html`/`overview.js`) — the landing page. Deliberately named `index.html`
+  (not just set as `manifest.json`'s `start_url`) because `start_url` only affects launches from
+  an installed home-screen icon — a plain browser visit to the bare/bookmarked URL always loads
+  whatever file is literally named `index.html` on any static host, PWA or not. Read-only
+  summary of the current pay period: income vs. assumed, spend vs. budgeted, real cash position,
+  total debt. Pulls from all three IndexedDB stores plus localStorage; doesn't own any data
+  itself. If Overview is ever renamed again, `expenses.html` is the fallback "safe" name to free
+  up — don't let `index.html` drift back to meaning Expenses without updating `manifest.json`'s
+  `start_url`, every page's nav links, `nav-swipe.js`'s `PAGE_ORDER`, and `sw.js`'s `APP_SHELL`
+  together — a partial rename silently breaks navigation.
+- **Expenses** (`expenses.html`/`app.js`) — the expense log, including the "unexpected" flag.
 - **Budget** (`budget.html`/`budget.js`) — editable per-category targets + actual income read.
 - **Health** (`health.html`/`health.js`) — quit-smoking log + actual health-category spend.
 - **Income** (`income.html`/`income.js`) — the income log.

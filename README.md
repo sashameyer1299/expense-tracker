@@ -109,8 +109,8 @@ the offline/install behaviour.
 
 | File | Responsibility |
 |---|---|
-| `overview.html` | Landing page — where you stand right now: income, spending vs budget, real cash position, debt |
-| `index.html` | Markup / app shell — expense tracker |
+| `index.html` | Landing page (Overview) — where you stand right now: income, spending vs budget, real cash position, debt. Named `index.html` on purpose so a bare/bookmarked URL lands here, not just installed-PWA launches |
+| `expenses.html` | The expense tracker itself (this was `index.html` before Overview took that name) |
 | `budget.html` | Live-editable monthly budget targets per category, plus actual income logged |
 | `health.html` | Quit-smoking daily log + money saved + actual Health/Quit-Smoking spend |
 | `income.html` | Income log — date, source, amount, note |
