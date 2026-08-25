@@ -6,9 +6,14 @@ is no server component at all — plain HTML/CSS/JS is the smallest thing that w
 
 ## Architecture
 
-Four pages, each a self-contained HTML+JS pair, no shared modules (no build step, so small
-duplication across files — e.g. `openDB()` — is intentional, not an oversight):
+Six pages, each a self-contained HTML+JS pair, no shared modules (no build step, so small
+duplication across files — e.g. `openDB()`, the pay-cycle `monthKey`/`monthLabel` — is
+intentional, not an oversight):
 
+- **Overview** (`overview.html`/`overview.js`) — the landing page (`manifest.json` start_url).
+  Read-only summary of the current pay period: income vs. assumed, spend vs. budgeted, real
+  cash position, total debt. Pulls from all three IndexedDB stores plus localStorage; doesn't
+  own any data itself.
 - **Expenses** (`index.html`/`app.js`) — the expense log, including the "unexpected" flag.
 - **Budget** (`budget.html`/`budget.js`) — editable per-category targets + actual income read.
 - **Health** (`health.html`/`health.js`) — quit-smoking log + actual health-category spend.
@@ -18,7 +23,12 @@ duplication across files — e.g. `openDB()` — is intentional, not an oversigh
   `debtId` — see `adjustDebtBalance()` there. Don't add a second, competing place that mutates
   debt balances without going through the same reversal logic on edit/delete.
 
-`nav-swipe.js` is shared across all five pages (one file, not duplicated per page) — it's
+Every page's "this month" (`monthKey`/`monthLabel`) actually means the pay cycle, 25th to 24th
+— `PAYDAY = 25`, duplicated in `app.js`, `budget.js`, `health.js`, `income.js`, `overview.js`.
+Keep the constant and the function names in sync across those five if payday ever changes;
+don't let one page silently drift back to calendar-month semantics.
+
+`nav-swipe.js` is shared across all six pages (one file, not duplicated per page) — it's
 generic page-order navigation, not page-specific logic, so it doesn't follow the
 per-page-duplication convention the DB helpers do. Swipe left/right moves between pages in
 `PAGE_ORDER`. It ignores touches starting inside `.categoryList`, which has its own touch
@@ -29,9 +39,9 @@ Data lives in the browser only, nothing sent over the network at runtime — kee
 - **IndexedDB** (`expenseTrackerDB`, currently version 3) with three object stores: `expenses`,
   `income`, and `debts`. Every page that opens the DB runs the same `onupgradeneeded` block that
   creates all three if missing, because a visitor can land on any page first — don't let one
-  page assume another has already initialized the schema. Bump `DB_VERSION` (in all five files
-  that open the DB: `app.js`, `budget.js`, `health.js`, `income.js`, `debts.js`) if the schema
-  changes again.
+  page assume another has already initialized the schema. Bump `DB_VERSION` (in all six files
+  that open the DB: `app.js`, `budget.js`, `health.js`, `income.js`, `debts.js`, `overview.js`)
+  if the schema changes again.
 - **localStorage** for the editable category list, budget targets, net income figure, and the
   quit-smoking daily log.
 

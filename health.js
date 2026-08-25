@@ -38,11 +38,25 @@ async function getAllExpenses() {
 
 const money = (n) => `N$${(isNaN(n) ? 0 : n).toFixed(2)}`;
 const todayStr = () => new Date().toISOString().slice(0, 10);
-const monthKey = (dateStr) => dateStr.slice(0, 7);
-const monthLabel = (key) => {
+
+// "This month" runs on the actual pay cycle (25th to 24th) — payday is the 25th.
+const PAYDAY = 25;
+function monthKey(dateStr) {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  let year = y, month = m;
+  if (d < PAYDAY) {
+    month -= 1;
+    if (month < 1) { month = 12; year -= 1; }
+  }
+  return `${year}-${String(month).padStart(2, '0')}`;
+}
+function monthLabel(key) {
   const [y, m] = key.split('-').map(Number);
-  return new Date(y, m - 1, 1).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
-};
+  const start = new Date(y, m - 1, PAYDAY);
+  const end = new Date(y, m, PAYDAY - 1);
+  const fmt = (d) => d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+  return `${fmt(start)} – ${fmt(end)} ${end.getFullYear()}`;
+}
 
 function loadSmokeLog() {
   try {

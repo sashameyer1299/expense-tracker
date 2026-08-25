@@ -37,6 +37,24 @@ never leaves your phone; see **Data & privacy** below.
 - Clearing the browser's site data for this app (or uninstalling it) deletes the data with it.
   Export before doing that if you want to keep it.
 
+## Pay cycle, not calendar month
+
+"This month" everywhere in the app (Expenses summary/history, Budget's actual-income line,
+Health's monthly figures, Income summary/history, Overview) actually means **the current pay
+period, 25th to 24th** — payday is the 25th. A date on the 20th belongs to the period that
+started the previous month's 25th; a date on the 25th starts a new period. This is `PAYDAY = 25`
+in each file's `monthKey`/`monthLabel` (kept those names so call sites didn't need touching) —
+change it there, in all of `app.js`, `budget.js`, `health.js`, `income.js`, `overview.js`, if
+payday ever changes.
+
+## Overview
+
+The landing page (`overview.html`, `manifest.json`'s `start_url`). Shows, for the current pay
+period: actual income logged vs. your assumed net income; actual spend vs. total budgeted
+(headroom, can go negative); actual income minus actual spend as the real cash position (as
+opposed to Budget's purely planned "Remaining"); and total debt owed across all debts. Read-only
+— no editing happens here, it's a summary of what the other five pages already hold.
+
 ## Categories
 
 Default categories mirror the household budget priority order (see `BUDGET.md`):
@@ -60,6 +78,7 @@ the offline/install behaviour.
 
 | File | Responsibility |
 |---|---|
+| `overview.html` | Landing page — where you stand right now: income, spending vs budget, real cash position, debt |
 | `index.html` | Markup / app shell — expense tracker |
 | `budget.html` | Live-editable monthly budget targets per category, plus actual income logged |
 | `health.html` | Quit-smoking daily log + money saved + actual Health/Quit-Smoking spend |
@@ -71,7 +90,8 @@ the offline/install behaviour.
 | `health.js` | Health page logic: manual smoke-free log, streak/savings maths, reads expense DB for actual spend |
 | `income.js` | Income page logic: IndexedDB CRUD for the `income` store, export/import |
 | `debts.js` | Debts page logic: IndexedDB CRUD for the `debts` store |
-| `nav-swipe.js` | Shared: swipe left/right to move between pages (Expenses → Budget → Health → Income → Debts) |
+| `overview.js` | Overview page logic — reads all three IndexedDB stores plus localStorage settings, read-only |
+| `nav-swipe.js` | Shared: swipe left/right to move between pages (Overview → Expenses → Budget → Health → Income → Debts) |
 | `manifest.json` | PWA metadata (name, icon, install behaviour) |
 | `sw.js` | Service worker — caches the app shell for offline use |
 | `icon.svg` / `icon-192.png` / `icon-512.png` | App icon |

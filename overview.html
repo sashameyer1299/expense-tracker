@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f1115">
+<title>Overview</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <h1>Overview</h1>
+  <nav class="pageNav">
+    <span class="navActive">Overview</span>
+    <a class="navLink" href="index.html">Expenses</a>
+    <a class="navLink" href="budget.html">Budget</a>
+    <a class="navLink" href="health.html">Health</a>
+    <a class="navLink" href="income.html">Income</a>
+    <a class="navLink" href="debts.html">Debts</a>
+  </nav>
+  <div id="periodBanner" class="monthSummary"></div>
+</header>
+
+<main>
+  <section class="netSection">
+    <h2>Income this pay period</h2>
+    <div class="totalRow"><span>Actual logged</span><span id="actualIncome">N$0.00</span></div>
+    <div class="totalRow"><span>Net income (assumed)</span><span id="assumedIncome">N$0.00</span></div>
+  </section>
+
+  <section class="netSection">
+    <h2>Spending this pay period</h2>
+    <div class="totalRow"><span>Actual spent</span><span id="actualSpent">N$0.00</span></div>
+    <div class="totalRow"><span>Total budgeted</span><span id="totalBudgeted">N$0.00</span></div>
+    <div class="totalRow remaining"><span>Budget headroom</span><span id="budgetHeadroom">N$0.00</span></div>
+  </section>
+
+  <section class="netSection">
+    <h2>Real cash position this pay period</h2>
+    <div class="totalRow remaining"><span>Actual income − actual spent</span><span id="netCash">N$0.00</span></div>
+  </section>
+
+  <section class="netSection">
+    <h2>Debt</h2>
+    <div class="totalRow"><span>Total owed</span><span id="totalDebt">N$0.00</span></div>
+    <div class="totalRow"><span>Across</span><span id="debtCount">0 debts</span></div>
+  </section>
+</main>
+
+<script src="nav-swipe.js" defer></script>
+<script src="overview.js" defer></script>
+</body>
+</html>

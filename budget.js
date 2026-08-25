@@ -37,7 +37,18 @@ async function getAllIncome() {
 }
 
 const todayStr = () => new Date().toISOString().slice(0, 10);
-const monthKey = (dateStr) => dateStr.slice(0, 7);
+
+// "This month" runs on the actual pay cycle (25th to 24th) — payday is the 25th.
+const PAYDAY = 25;
+function monthKey(dateStr) {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  let year = y, month = m;
+  if (d < PAYDAY) {
+    month -= 1;
+    if (month < 1) { month = 12; year -= 1; }
+  }
+  return `${year}-${String(month).padStart(2, '0')}`;
+}
 
 const DEFAULT_CATEGORIES = [
   { name: 'Rent', urgency: 1 },

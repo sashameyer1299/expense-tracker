@@ -1,7 +1,7 @@
 // Swipe left/right to move between the app's pages. Plain touch events, no libraries.
 // Shared across all four pages via a single <script> include.
 
-const PAGE_ORDER = ['index.html', 'budget.html', 'health.html', 'income.html', 'debts.html'];
+const PAGE_ORDER = ['overview.html', 'index.html', 'budget.html', 'health.html', 'income.html', 'debts.html'];
 const SWIPE_THRESHOLD = 70;
 
 function currentPageIndex() {
