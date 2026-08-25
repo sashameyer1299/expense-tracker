@@ -1,6 +1,6 @@
 // Cache-first service worker for the app shell — makes the PWA work fully offline after first load.
 
-const CACHE_NAME = 'expense-tracker-v22';
+const CACHE_NAME = 'expense-tracker-v23';
 const APP_SHELL = [
   // index.html is now the Overview page (manifest start_url) — expenses.html holds what used
   // to be index.html's content. Renamed so a bare/bookmarked URL lands on Overview by default,

@@ -143,7 +143,17 @@ async function render() {
   let totalBudgeted = 0;
   try {
     const targets = JSON.parse(localStorage.getItem('budgetTargets') || '{}');
-    totalBudgeted = Object.values(targets).reduce((sum, v) => sum + (parseFloat(v) || 0), 0);
+    // Only count targets for categories that still exist — a deleted/renamed category can
+    // leave an orphaned key behind in budgetTargets, and Budget's own total already excludes
+    // those (it sums by iterating the category list, not the targets object), so mirror that
+    // here or the two pages disagree on "Total budgeted".
+    const rawCategories = JSON.parse(localStorage.getItem('categories') || '[]');
+    const categoryNames = new Set(
+      rawCategories.map((c) => (c && typeof c === 'object' ? c.name : String(c).replace(/^\d\s*·\s*/, '').trim()))
+    );
+    totalBudgeted = Object.entries(targets)
+      .filter(([name]) => categoryNames.has(name))
+      .reduce((sum, [, v]) => sum + (parseFloat(v) || 0), 0);
   } catch (e) { /* ignore */ }
 
   document.getElementById('actualIncome').textContent = money(actualIncome);
